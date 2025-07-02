@@ -1,6 +1,7 @@
 streamlit
 python-dotenv
 google-api-python-client
+llama-ndex-lms-google-genai
 google-auth
 google-auth-oauthlib
 google-auth-httplib2
