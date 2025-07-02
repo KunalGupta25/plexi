@@ -1,7 +1,7 @@
 # 📚 Plexi: Notes Platform
 
 <p align="center">
-  <img src="assets/logo.png" alt="Plexi Logo" width="160"/>
+  <img src="assets/logo.png" alt="Plexi Logo" />
 </p>
 
 Plexi is a comprehensive platform for My University Computer Science Students. It provides organized access to semester-wise notes and study materials, and also features an AI-powered assistant for academic queries.
