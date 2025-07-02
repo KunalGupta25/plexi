@@ -3,6 +3,7 @@ from llama_index.core import StorageContext, load_index_from_storage, Settings
 from llama_index.llms.google_genai import GoogleGenAI
 from llama_index.embeddings.huggingface import HuggingFaceEmbedding  # <-- Use HuggingFace for BGE
 from llama_index.core.memory import ChatMemoryBuffer
+import os
 
 st.set_page_config(page_title="Plexi", page_icon="🤖")
 st.title("🤖 Plexi-Bot: Academic Assistant")
@@ -44,7 +45,8 @@ if "api_key" not in st.session_state:
         st.stop()
 
 # Step 2: Use the API key from session_state (input field is now hidden)
-api_key = st.session_state.api_key
+google_api_key = st.session_state.api_key
+api_key = os.getenv("HUGGINGFACEHUB_API_TOKEN")
 
 # Step 3: Set up embedding and LLM
 # --- USE BGE FOR EMBEDDINGS ---
@@ -63,7 +65,7 @@ with st.spinner("Loading knowledge base..."):
 def init_chat_engine():
     llm = GoogleGenAI(
         model="gemini-1.5-flash",
-        api_key=api_key
+        api_key=google_api_key
     )
     memory = ChatMemoryBuffer.from_defaults(token_limit=1500)
     return index.as_chat_engine(
