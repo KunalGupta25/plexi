@@ -11,4 +11,7 @@ requests
 pandas
 huggingface-hub
 openai
+llama-index-embeddings-huggingface 
+sentence-transformers
+
 # Add any other dependencies your code uses
