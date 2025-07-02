@@ -156,7 +156,7 @@ def load_and_index_data():
 
     print("Building vector index...")
     embed_model = HuggingFaceEmbedding(
-        model_name="BAAI/bge-large-en-v1.5",
+        model_name="BAAI/bge-m3",
         # api_key=os.getenv("HUGGINGFACEHUB_API_TOKEN")  # Use your HF API token in .env
     )
     Settings.embed_model = embed_model

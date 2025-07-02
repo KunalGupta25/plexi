@@ -48,7 +48,7 @@ api_key = st.session_state.api_key
 
 # Step 3: Set up embedding and LLM
 # --- USE BGE FOR EMBEDDINGS ---
-embed_model = HuggingFaceEmbedding(model_name="BAAI/bge-large-en-v1.5")
+embed_model = HuggingFaceEmbedding(model_name="BAAI/bge-m3")
 Settings.embed_model = embed_model
 
 @st.cache_resource(show_spinner=False)
