@@ -1,0 +1,13 @@
+streamlit
+python-dotenv
+google-api-python-client
+google-auth
+google-auth-oauthlib
+google-auth-httplib2
+llama-index
+PyPDF2
+requests
+pandas
+huggingface-hub
+openai
+# Add any other dependencies your code uses
