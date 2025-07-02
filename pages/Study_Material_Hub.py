@@ -27,8 +27,8 @@ ROOT_FOLDER_ID = '1UjzflgkeugjnODaAxwdbTaPtvGZBDoJC'  # Main Plexi folder ID
 
 @st.cache_resource
 def get_drive_service():
-    credentials = service_account.Credentials.from_service_account_file(
-        SERVICE_ACCOUNT_FILE, scopes=SCOPES)
+    credentials = service_account.Credentials.from_service_account_info(
+    SERVICE_ACCOUNT_FILE, scopes=SCOPES)
     return build('drive', 'v3', credentials=credentials)
 
 def get_folders_in_parent(parent_id):
