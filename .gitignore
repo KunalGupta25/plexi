@@ -1,0 +1,16 @@
+# Environment variables
+.env
+
+# Credentials and tokens
+credentials.json
+token.json
+service_account.json
+
+# Python virtual environments
+venv/
+env/
+ENV/
+.venv/
+.pyenv/
+
+.streamlit
