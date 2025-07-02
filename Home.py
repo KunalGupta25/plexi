@@ -2,6 +2,7 @@ import streamlit as st
 
 st.set_page_config(page_title="Plexi | Home", page_icon="🤖")
 st.title("🤖 Plexi: Your Study Patner")
+st.image("assets/logo.png")
 st.markdown("""
 Welcome to **Plexi**, your one stop solution for all academic needs!\n
 - It is specially designed to help students with their academic journey by providing access to study materials, answering questions, and assisting with various academic tasks.\n
