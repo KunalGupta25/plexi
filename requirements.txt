@@ -13,5 +13,5 @@ huggingface-hub
 openai
 llama-index-embeddings-huggingface 
 sentence-transformers
-
+streamlit-pdf-viewer
 # Add any other dependencies your code uses
