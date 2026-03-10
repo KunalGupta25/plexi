@@ -1,102 +1,84 @@
-# 📚 Plexi: Notes Platform
+# Plexi
 
 <p align="center">
-  <img src="assets/logo.png" alt="Plexi Logo" />
+  <img src="assets/logo.png" alt="Plexi Logo" width="120" />
 </p>
 
-Plexi is a comprehensive platform for My University Computer Science Students. It provides organized access to semester-wise notes and study materials, and also features an AI-powered assistant for academic queries.
+<p align="center">
+  <strong>Your AI-powered study companion for Parul University CS students.</strong>
+</p>
+
+<p align="center">
+  <a href="https://ko-fi.com/lazy_human">
+    <img src="https://ko-fi.com/img/githubbutton_sm.svg" alt="Support on Ko-fi" />
+  </a>
+</p>
 
 ---
 
-## 🚀 Features
+## What is Plexi?
 
-- **Semester-wise Notes Download:**  
-  Easily browse and download CSE notes and study materials for Parul University, organized by semester and subject.
-
-- **Plexi Assistant:**  
-  Chat with an AI assistant for academic help, summaries, and quick answers to your questions.
-
-- **Secure & Private:**  
-  All credentials are managed securely via environment variables.
+Plexi is a free web app that gives Collage students easy access to study materials and an AI assistant — all in one place. No setup, no accounts, just open and start studying.
 
 ---
 
-## 🛠️ Tech Stack
+## What can you do?
 
-- Python 3.10+
-- Streamlit (web app framework)
-- Google Drive API (for notes storage)
-- LlamaIndex (knowledge base)
-- Google GenAI (Base LLM - gemini 2.0 flash) 
-- HuggingFace (Data Embedding and Indexing)
-- python-dotenv (environment management)
+### Study Material Hub
 
----
+Browse and download notes, slides, and other materials organized by **semester → subject → type**. PDFs open right in the browser — no extra apps needed.
 
-## 📥 Getting Started
+- Filter by semester, subject, and file type
+- In-Build PDF Viewer
+- Download any file with one click
 
-1. **Clone the repository:**
-   ```sh
-   git clone https://github.com/KunalGupta25/plexi.git
-   cd plexi
-   ```
+### Plexi Assistant
 
-2. **Install dependencies:**
-   ```sh
-   pip install -r requirements.txt
-   ```
+Chat with an AI that **only answers using actual study materials from Database** — no hallucinations, no random internet answers. It works like Google's NotebookLM but specifically for your course content.
 
-3. **Configure environment variables:**
-   - Copy `example.env` to `.env` and fill in your credentials:
-     ```env
-     PROJECT_ID=your-google-project-id
-     PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\nYOUR_PRIVATE_KEY\n-----END PRIVATE KEY-----\n"
-     CLIENT_EMAIL=your-service-account-email@your-project-id.iam.gserviceaccount.com
-     GOOGLE_API_KEY=your-google-api-key
-     HUGGINGFACEHUB_API_TOKEN=your-huggingface-api
-     ```
+- Pick any OpenAI Compatible LLM provider — **Gemini, ChatGPT, Mistral, Groq, OpenRouter**, or even a local model(Ollama or LM Studio)
+- Every answer includes **source citations** so you know exactly where the information came from
+- Bring your own API key (free tiers available from most providers)
 
-4. **Run the app:**
-   ```sh
-   streamlit run Home.py
-   ```
+### Contribute Materials
+
+Have notes that could help others? Submit them through a simple form — they'll be reviewed and added for everyone automatically.
 
 ---
 
-## 📚 About `loader.py`
+## Screenshots
 
-The `loader.py` script:
+| Home | Study Material Hub |
+|:---:|:---:|
+| ![Home](assets/home.png) | ![Hub](assets/material_hub1.png) |
 
-- Authenticates with Google Drive
-- Fetches and organizes notes and study materials
-- Index the Document to be used as Knowlage Base for Fast Response
----
-
-## 🖼️ Preview
-
-![Plexi Home](assets/home.png)
-![Study Material Hub](assets/material_hub1.png)
-![Study Material Hub](assets/marteial_hub2.png)
-![Plexi Assistant](assets/assistant.png)
+| Material Preview | Plexi Assistant |
+|:---:|:---:|
+| ![Preview](assets/marteial_hub2.png) | ![Assistant](assets/assistant.png) |
 
 ---
 
-## 📄 License
+## How it works
+
+1. **Pick your scope** — Select a semester and subject
+2. **Browse or chat** — View files in the Hub, or ask the AI assistant questions grounded in your materials
+3. **Get cited answers** — Every response references the exact source file so you can verify and study further
+
+---
+
+## Built by
+
+**Kunal Gupta** (LazyHuman)
+
+- [lazyhideout.tech](https://lazyhideout.tech)
+- [github.com/KunalGupta25](https://github.com/KunalGupta25)
+- [ko-fi.com/lazy_human](https://ko-fi.com/lazy_human)
+
+---
+
+## License
 
 This project is licensed under the [MIT License](LICENSE).
-
----
-
-## ☕ Request Commission Work
-
-Looking for creating any kind of webapp or chatbot?  
-**Open for all kinds of commission work!**  
-Whether you need a unique app, integration, or automation, feel free to reach out.
-
-Support my work or request your custom project here:  
-[![Ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/lazy_human)
-
-Or visit: https://ko-fi.com/lazy_human
 
 ---
 

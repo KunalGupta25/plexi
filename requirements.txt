@@ -1,17 +1,5 @@
 streamlit
 python-dotenv
-google-api-python-client
-llama-index-llms-google-genai
-google-auth
-google-auth-oauthlib
-google-auth-httplib2
-llama-index
-PyPDF2
 requests
-pandas
-huggingface-hub
-openai
-llama-index-embeddings-huggingface 
-sentence-transformers
+PyPDF2
 streamlit-pdf-viewer
-# Add any other dependencies your code uses
