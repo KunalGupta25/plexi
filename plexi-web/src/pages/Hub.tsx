@@ -40,6 +40,9 @@ const Hub: React.FC = () => {
   const [type, setType] = useState("");
   const [selectedFile, setSelectedFile] = useState<FileInfo | null>(null);
   const [preview, setPreview] = useState<PreviewState>({ kind: "idle" });
+  const [officeViewer, setOfficeViewer] = useState<"microsoft" | "google">(
+    "microsoft",
+  );
 
   const subjects = useMemo(
     () => getSubjects(semester),
@@ -441,13 +444,32 @@ const Hub: React.FC = () => {
 
                   {preview.kind === "office" && (
                     <div className="flex-1 flex flex-col w-full relative min-h-[600px] bg-white overflow-hidden">
-                      <div className="bg-surface-container-high p-2 text-center text-xs text-on-surface-variant shrink-0 border-b border-outline-variant/20">
-                        If the preview is blocked by your browser, please use
-                        the <strong>Download</strong> or{" "}
-                        <strong>Open Tab</strong> buttons above.
+                      <div className="bg-surface-container-high p-2 text-center text-xs text-on-surface-variant shrink-0 border-b border-outline-variant/20 flex flex-col sm:flex-row items-center justify-center gap-3">
+                        <span>
+                          If the preview is blocked, try switching the viewer or
+                          use the <strong>Download</strong> button above.
+                        </span>
+                        <div className="flex items-center bg-surface-container rounded-lg p-0.5 border border-outline-variant/30">
+                          <button
+                            onClick={() => setOfficeViewer("microsoft")}
+                            className={`px-3 py-1 rounded-md text-[10px] font-bold uppercase tracking-widest transition-colors ${officeViewer === "microsoft" ? "bg-primary text-on-primary shadow-sm" : "text-on-surface-variant hover:bg-surface-container-highest"}`}
+                          >
+                            Microsoft
+                          </button>
+                          <button
+                            onClick={() => setOfficeViewer("google")}
+                            className={`px-3 py-1 rounded-md text-[10px] font-bold uppercase tracking-widest transition-colors ${officeViewer === "google" ? "bg-primary text-on-primary shadow-sm" : "text-on-surface-variant hover:bg-surface-container-highest"}`}
+                          >
+                            Google
+                          </button>
+                        </div>
                       </div>
                       <iframe
-                        src={`https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(preview.url)}`}
+                        src={
+                          officeViewer === "microsoft"
+                            ? `https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(preview.url)}`
+                            : `https://docs.google.com/gview?url=${encodeURIComponent(preview.url)}&embedded=true`
+                        }
                         className="w-full flex-1"
                         frameBorder="0"
                         title={selectedFile.name}
