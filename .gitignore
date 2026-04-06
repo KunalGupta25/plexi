@@ -59,3 +59,6 @@ ENV/
 *.njsproj
 *.sln
 *.sw?
+
+# Submodules/Independent Repos
+plexi-api/
