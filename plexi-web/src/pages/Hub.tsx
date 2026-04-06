@@ -440,11 +440,15 @@ const Hub: React.FC = () => {
                   )}
 
                   {preview.kind === "office" && (
-                    <div className="flex-1 w-full relative min-h-[600px] bg-white">
+                    <div className="flex-1 flex flex-col w-full relative min-h-[600px] bg-white overflow-hidden">
+                      <div className="bg-surface-container-high p-2 text-center text-xs text-on-surface-variant shrink-0 border-b border-outline-variant/20">
+                        If the preview is blocked by your browser, please use
+                        the <strong>Download</strong> or{" "}
+                        <strong>Open Tab</strong> buttons above.
+                      </div>
                       <iframe
-                        src={`https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(preview.url)}`}
-                        width="100%"
-                        height="100%"
+                        src={`https://docs.google.com/gview?url=${encodeURIComponent(preview.url)}&embedded=true`}
+                        className="w-full flex-1"
                         frameBorder="0"
                         title={selectedFile.name}
                       />
