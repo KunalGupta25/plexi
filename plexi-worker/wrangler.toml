@@ -1,0 +1,16 @@
+name = "plexi-worker"
+main = "src/index.ts"
+compatibility_date = "2024-12-01"
+
+# Override HF_API_URL in the Cloudflare dashboard for production.
+[vars]
+HF_API_URL = "https://lazyhuman-plexi-api.hf.space"
+# The Cloudflare Pages frontend origin (used in CORS + cache key namespacing)
+FRONTEND_ORIGIN = "https://plexi.lazyhideout.tech"
+
+# Create with: wrangler kv namespace create PLEXI_CACHE
+# Then paste the returned id below.
+[[kv_namespaces]]
+binding = "PLEXI_CACHE"
+id = "df7f67d3cf094d5abd551e935a4fb895"
+preview_id = "df7f67d3cf094d5abd551e935a4fb895"
