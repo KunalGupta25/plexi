@@ -410,19 +410,19 @@ const Hub: React.FC = () => {
         <div
           className={`lg:block ${selectedFile ? "fixed inset-0 z-50 p-4 bg-surface/80 backdrop-blur-sm lg:static lg:p-0 lg:bg-transparent lg:backdrop-blur-none lg:z-auto" : "hidden"}`}
         >
-          <section className="bg-surface-container-lowest rounded-3xl border border-outline-variant/30 shadow-2xl lg:shadow-sm p-5 md:p-6 lg:p-8 flex flex-col gap-4 md:gap-6 h-full lg:h-auto lg:min-h-[600px] relative">
+          <section className="bg-surface-container-lowest rounded-xl lg:rounded-3xl border border-outline-variant/30 shadow-2xl lg:shadow-sm p-2 lg:p-8 flex flex-col gap-2 lg:gap-6 h-full lg:h-auto lg:min-h-[600px] relative">
             {selectedFile ? (
               <>
                 <button
                   onClick={() => setSelectedFile(null)}
-                  className="lg:hidden absolute top-4 right-4 z-50 bg-surface-container-high hover:bg-surface-container-highest text-on-surface p-2 rounded-full transition-colors shadow-sm"
+                  className="lg:hidden absolute top-2 right-2 z-50 bg-surface-container-high hover:bg-surface-container-highest text-on-surface p-2 rounded-full transition-colors shadow-sm"
                 >
                   <span className="material-symbols-outlined text-[20px]">
                     close
                   </span>
                 </button>
                 {/* File Header */}
-                <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 pr-10 lg:pr-0">
+                <div className="hidden lg:flex flex-col sm:flex-row sm:items-start justify-between gap-4 pr-10 lg:pr-0">
                   <div className="flex flex-col gap-2">
                     <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-primary font-label">
                       <span className="material-symbols-outlined text-[16px]">
@@ -468,10 +468,10 @@ const Hub: React.FC = () => {
                   </div>
                 </div>
 
-                <div className="h-px bg-outline-variant/30 w-full"></div>
+                <div className="hidden lg:block h-px bg-outline-variant/30 w-full"></div>
 
                 {/* Preview Content */}
-                <div className="flex-1 bg-surface-container-low rounded-2xl border border-outline-variant/20 overflow-hidden relative min-h-[500px] flex flex-col">
+                <div className="flex-1 bg-surface-container-low rounded-md lg:rounded-2xl border border-outline-variant/20 overflow-hidden relative h-[calc(100dvh-6.5rem)] lg:h-auto min-h-0 lg:min-h-[500px] flex flex-col">
                   {preview.kind === "loading" && (
                     <div className="absolute inset-0 flex flex-col items-center justify-center bg-surface-container-lowest/80 backdrop-blur-sm z-10 gap-4">
                       <span className="material-symbols-outlined text-4xl text-primary animate-spin">
@@ -484,7 +484,7 @@ const Hub: React.FC = () => {
                   )}
 
                   {preview.kind === "doc" && (
-                    <div className="flex-1 w-full relative min-h-[600px] bg-white">
+                    <div className="flex-1 w-full relative h-full min-h-0 lg:min-h-[600px] bg-white">
                       <Suspense
                         fallback={
                           <div className="flex flex-col items-center justify-center h-full gap-4">
@@ -506,8 +506,8 @@ const Hub: React.FC = () => {
                   )}
 
                   {preview.kind === "office" && (
-                    <div className="flex-1 flex flex-col w-full relative min-h-[600px] bg-white overflow-hidden">
-                      <div className="bg-surface-container-high p-2 text-center text-xs text-on-surface-variant shrink-0 border-b border-outline-variant/20 flex flex-col sm:flex-row items-center justify-center gap-3">
+                    <div className="flex-1 flex flex-col w-full relative h-full min-h-0 lg:min-h-[600px] bg-white overflow-hidden">
+                      <div className="hidden lg:flex bg-surface-container-high p-2 text-center text-xs text-on-surface-variant shrink-0 border-b border-outline-variant/20 flex-col sm:flex-row items-center justify-center gap-3">
                         <span>
                           If the preview is blocked, try switching the viewer or
                           use the <strong>Download</strong> button above.
@@ -541,7 +541,7 @@ const Hub: React.FC = () => {
                   )}
 
                   {preview.kind === "image" && (
-                    <div className="flex-1 flex items-center justify-center p-8 bg-surface-container-lowest">
+                    <div className="flex-1 flex items-center justify-center p-3 lg:p-8 bg-surface-container-lowest">
                       <img
                         src={preview.url}
                         alt={selectedFile.name}
@@ -551,13 +551,13 @@ const Hub: React.FC = () => {
                   )}
 
                   {preview.kind === "text" && (
-                    <div className="flex-1 p-6 overflow-y-auto bg-surface-container-lowest font-mono text-sm text-on-surface leading-relaxed whitespace-pre-wrap break-words">
+                    <div className="flex-1 p-3 lg:p-6 overflow-y-auto bg-surface-container-lowest font-mono text-sm text-on-surface leading-relaxed whitespace-pre-wrap break-words">
                       {preview.content}
                     </div>
                   )}
 
                   {preview.kind === "unsupported" && (
-                    <div className="flex-1 flex flex-col items-center justify-center p-8 text-center gap-4">
+                    <div className="flex-1 flex flex-col items-center justify-center p-4 lg:p-8 text-center gap-4">
                       <span className="material-symbols-outlined text-5xl text-outline/40 mb-2">
                         unknown_document
                       </span>
@@ -570,7 +570,7 @@ const Hub: React.FC = () => {
                   )}
 
                   {preview.kind === "error" && (
-                    <div className="flex-1 flex flex-col items-center justify-center p-8 text-center gap-4 bg-error-container/20">
+                    <div className="flex-1 flex flex-col items-center justify-center p-4 lg:p-8 text-center gap-4 bg-error-container/20">
                       <span className="material-symbols-outlined text-4xl text-error mb-2">
                         warning
                       </span>

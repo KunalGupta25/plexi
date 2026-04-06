@@ -19,11 +19,11 @@ const DocViewerComponent: React.FC<DocViewerComponentProps> = ({
   ];
 
   return (
-    <div className="w-full h-full min-h-[600px] flex flex-col relative bg-white rounded-xl overflow-hidden">
+    <div className="w-full h-full min-h-0 lg:min-h-[600px] flex flex-col relative bg-white rounded-md lg:rounded-xl overflow-hidden">
       <DocViewer
         documents={docs}
         pluginRenderers={DocViewerRenderers}
-        style={{ width: "100%", height: "100%", minHeight: "600px" }}
+        style={{ width: "100%", height: "100%", minHeight: "0" }}
         config={{
           header: {
             disableHeader: true,
