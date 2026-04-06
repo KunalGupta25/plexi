@@ -96,7 +96,7 @@ const Hub: React.FC = () => {
         if (["ppt", "pptx", "doc", "docx"].includes(ext)) {
           setPreview({
             kind: "office",
-            url: fileUrl,
+            url: api.fileUrl(fileUrl, file.name),
           });
           return;
         }
