@@ -1,6 +1,13 @@
 import React, { useEffect, useMemo, useState, Suspense, lazy } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useManifest, FileInfo } from "../hooks/useManifest";
 import { api } from "../api/client";
+
+const formatFileName = (name: string) => {
+  const extIndex = name.lastIndexOf(".");
+  const baseName = extIndex !== -1 ? name.substring(0, extIndex) : name;
+  return baseName.replace(/[._]/g, " ");
+};
 
 const DocViewerComponent = lazy(
   () => import("../components/DocViewerComponent"),
@@ -33,16 +40,30 @@ type PreviewState =
   | { kind: "error"; message: string };
 
 const Hub: React.FC = () => {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const pathParts = useMemo(() => {
+    return location.pathname.split("/").map(decodeURIComponent).slice(2);
+  }, [location.pathname]);
+
   const { loading, error, semesters, getSubjects, getMaterialTypes, getFiles } =
     useManifest();
-  const [semester, setSemester] = useState("");
-  const [subject, setSubject] = useState("");
-  const [type, setType] = useState("");
+  const [semester, setSemester] = useState(pathParts[0] || "");
+  const [subject, setSubject] = useState(pathParts[1] || "");
+  const [type, setType] = useState(pathParts[2] || "");
   const [selectedFile, setSelectedFile] = useState<FileInfo | null>(null);
   const [preview, setPreview] = useState<PreviewState>({ kind: "idle" });
   const [officeViewer, setOfficeViewer] = useState<"microsoft" | "google">(
     "microsoft",
   );
+
+  // Sync state when URL changes (e.g. back button)
+  useEffect(() => {
+    const [urlSem, urlSub, urlType] = pathParts;
+    if (urlSem !== undefined && urlSem !== semester) setSemester(urlSem);
+    if (urlSub !== undefined && urlSub !== subject) setSubject(urlSub);
+    if (urlType !== undefined && urlType !== type) setType(urlType);
+  }, [pathParts, semester, subject, type]);
 
   const subjects = useMemo(
     () => getSubjects(semester),
@@ -64,13 +85,38 @@ const Hub: React.FC = () => {
       return;
     }
 
+    const urlFile = pathParts[3];
+
     setSelectedFile((current) => {
-      if (current && files.some((file) => file.name === current.name)) {
-        return current;
+      let fileToSelect = null;
+      if (urlFile) {
+        fileToSelect = files.find((f) => f.name === urlFile) || null;
       }
-      return files[0];
+
+      if (
+        !fileToSelect &&
+        current &&
+        files.some((f) => f.name === current.name)
+      ) {
+        fileToSelect = current;
+      }
+
+      if (!fileToSelect) {
+        fileToSelect = files[0];
+      }
+
+      if (fileToSelect && fileToSelect.name !== urlFile) {
+        setTimeout(() => {
+          navigate(
+            `/hub/${encodeURIComponent(semester)}/${encodeURIComponent(subject)}/${encodeURIComponent(type)}/${encodeURIComponent(fileToSelect!.name)}`,
+            { replace: true },
+          );
+        }, 0);
+      }
+
+      return fileToSelect;
     });
-  }, [files]);
+  }, [files, pathParts, navigate, semester, subject, type]);
 
   useEffect(() => {
     async function loadPreview(file: FileInfo) {
@@ -140,17 +186,31 @@ const Hub: React.FC = () => {
     setSubject("");
     setType("");
     setSelectedFile(null);
+    navigate(`/hub/${encodeURIComponent(value)}`);
   };
 
   const handleSubjectChange = (value: string) => {
     setSubject(value);
     setType("");
     setSelectedFile(null);
+    navigate(
+      `/hub/${encodeURIComponent(semester)}/${encodeURIComponent(value)}`,
+    );
   };
 
   const handleTypeChange = (value: string) => {
     setType(value);
     setSelectedFile(null);
+    navigate(
+      `/hub/${encodeURIComponent(semester)}/${encodeURIComponent(subject)}/${encodeURIComponent(value)}`,
+    );
+  };
+
+  const handleFileSelect = (file: FileInfo) => {
+    setSelectedFile(file);
+    navigate(
+      `/hub/${encodeURIComponent(semester)}/${encodeURIComponent(subject)}/${encodeURIComponent(type)}/${encodeURIComponent(file.name)}`,
+    );
   };
 
   if (loading) {
@@ -319,7 +379,7 @@ const Hub: React.FC = () => {
               {files.map((file) => (
                 <button
                   key={file.name}
-                  onClick={() => setSelectedFile(file)}
+                  onClick={() => handleFileSelect(file)}
                   className={`flex items-center gap-3 p-4 rounded-xl text-left transition-all border ${
                     selectedFile?.name === file.name
                       ? "bg-primary-fixed/40 border-primary-fixed text-primary shadow-sm"
@@ -329,8 +389,11 @@ const Hub: React.FC = () => {
                   <span className="material-symbols-outlined text-[20px] shrink-0 text-primary/70">
                     draft
                   </span>
-                  <span className="text-sm font-medium truncate flex-1">
-                    {file.name}
+                  <span
+                    className="text-sm font-medium truncate flex-1"
+                    title={formatFileName(file.name)}
+                  >
+                    {formatFileName(file.name)}
                   </span>
                   {selectedFile?.name === file.name && (
                     <span className="material-symbols-outlined text-[18px] shrink-0">
@@ -368,7 +431,7 @@ const Hub: React.FC = () => {
                       Preview Surface
                     </div>
                     <h3 className="text-2xl font-bold font-headline text-on-surface break-words">
-                      {selectedFile.name}
+                      {formatFileName(selectedFile.name)}
                     </h3>
                     <div className="flex items-center gap-2 mt-1">
                       <span className="px-2.5 py-1 rounded text-xs font-medium bg-surface-container text-on-surface-variant">
