@@ -63,7 +63,7 @@ export default {
     } else if (path === "/api/manifest" && request.method === "GET") {
       response = await handleManifest(request, env);
     } else if (
-      path === "/api/file" &&
+      path.startsWith("/api/file") &&
       (request.method === "GET" || request.method === "HEAD")
     ) {
       response = await handleFile(request, env);

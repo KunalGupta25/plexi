@@ -3,7 +3,7 @@
  * API client to communicate with the Cloudflare Worker middleman.
  */
 
-const WORKER_URL = import.meta.env.VITE_WORKER_URL || '';
+const WORKER_URL = import.meta.env.VITE_WORKER_URL || "";
 
 export interface RetrieveParams {
   query: string;
@@ -13,7 +13,7 @@ export interface RetrieveParams {
 }
 
 export interface Message {
-  role: 'system' | 'user' | 'assistant';
+  role: "system" | "user" | "assistant";
   content: string;
 }
 
@@ -28,42 +28,49 @@ export interface ChatParams {
 export const api = {
   async getManifest() {
     const res = await fetch(`${WORKER_URL}/api/manifest`);
-    if (!res.ok) throw new Error('Failed to fetch manifest');
+    if (!res.ok) throw new Error("Failed to fetch manifest");
     return res.json();
   },
 
   async retrieve(params: RetrieveParams) {
     const res = await fetch(`${WORKER_URL}/api/retrieve`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(params),
     });
-    if (!res.ok) throw new Error('Failed to retrieve context');
+    if (!res.ok) throw new Error("Failed to retrieve context");
     return res.json();
   },
 
   async chat(params: ChatParams) {
     const res = await fetch(`${WORKER_URL}/api/chat`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(params),
     });
     if (!res.ok) {
       const errorData = await res.json().catch(() => ({}));
-      throw new Error(errorData.error || 'Chat request failed');
+      throw new Error(errorData.error || "Chat request failed");
     }
     return res.json();
   },
 
   async fetchFile(url: string, filename?: string) {
     const res = await fetch(this.fileUrl(url, filename));
-    if (!res.ok) throw new Error('Failed to fetch file');
+    if (!res.ok) throw new Error("Failed to fetch file");
     return res.blob();
   },
 
   fileUrl(url: string, filename?: string) {
     const params = new URLSearchParams({ url });
-    if (filename) params.set('filename', filename);
+    if (filename) params.set("filename", filename);
+
+    // Microsoft Office Viewer absolutely requires the proxy URL to END with .pptx / .docx
+    // So we append the filename to the URL path itself to trick the viewer.
+    if (filename) {
+      return `${WORKER_URL}/api/file/${encodeURIComponent(filename)}?${params.toString()}`;
+    }
+
     return `${WORKER_URL}/api/file?${params.toString()}`;
-  }
+  },
 };
