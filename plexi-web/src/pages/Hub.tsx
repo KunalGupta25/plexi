@@ -96,7 +96,7 @@ const Hub: React.FC = () => {
         if (["ppt", "pptx", "doc", "docx"].includes(ext)) {
           setPreview({
             kind: "office",
-            url: api.fileUrl(fileUrl, file.name),
+            url: fileUrl,
           });
           return;
         }
@@ -447,7 +447,7 @@ const Hub: React.FC = () => {
                         <strong>Open Tab</strong> buttons above.
                       </div>
                       <iframe
-                        src={`https://docs.google.com/gview?url=${encodeURIComponent(preview.url)}&embedded=true`}
+                        src={`https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(preview.url)}`}
                         className="w-full flex-1"
                         frameBorder="0"
                         title={selectedFile.name}
