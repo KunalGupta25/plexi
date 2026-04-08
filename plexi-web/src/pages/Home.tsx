@@ -1,9 +1,14 @@
 import React from "react";
 import { Link } from "react-router-dom";
+import { SEO } from "../components/SEO";
 
 const Home: React.FC = () => {
   return (
     <div className="w-full max-w-7xl mx-auto py-4 md:py-8 flex flex-col gap-8 md:gap-12">
+      <SEO 
+        title="Plexi | Home"
+        description="Study with real materials, not generic answers. Plexi turns messy study material into a clean revision workflow."
+      />
       <section className="bg-surface-container-lowest rounded-3xl md:rounded-[2rem] p-6 md:p-16 shadow-[0_12px_40px_rgba(25,28,29,0.06)] relative overflow-hidden">
         <div className="absolute -top-32 -right-32 w-96 h-96 bg-primary-fixed/30 rounded-full blur-[80px]"></div>
         <div className="relative z-10">

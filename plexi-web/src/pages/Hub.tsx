@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState, Suspense, lazy } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useManifest, FileInfo } from "../hooks/useManifest";
 import { api } from "../api/client";
+import { SEO } from "../components/SEO";
 
 const formatFileName = (name: string) => {
   const extIndex = name.lastIndexOf(".");
@@ -238,7 +239,11 @@ const Hub: React.FC = () => {
   }
 
   return (
-    <div className="w-full flex flex-col gap-8 md:gap-12">
+    <div className="w-full max-w-7xl mx-auto py-4 md:py-8 flex flex-col gap-8 md:gap-12 min-h-screen">
+      <SEO 
+        title="Plexi | Material Hub"
+        description="Browse and preview study materials organized by semester and subject. Access notes, PPTs, and previous year questions instantly."
+      />
       {/* Hero Context */}
       <section className="mb-2">
         <h1 className="text-display-lg text-4xl md:text-5xl lg:text-6xl font-black font-headline tracking-tight text-primary mb-4">

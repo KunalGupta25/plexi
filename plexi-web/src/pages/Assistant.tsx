@@ -4,6 +4,7 @@ import { useSettings, PROVIDERS } from "../hooks/useSettings";
 import { api, Message } from "../api/client";
 import { marked } from "marked";
 import StudyScopeSelector from "../components/StudyScopeSelector";
+import { SEO } from "../components/SEO";
 
 const renderMarkdown = (content: string) =>
   marked.parse(content.replace(/</g, "&lt;").replace(/>/g, "&gt;")) as string;
@@ -184,6 +185,10 @@ ${context}`;
 
   return (
     <div className="w-full h-[calc(100vh-8rem)] bg-surface-container-lowest border border-outline-variant/30 rounded-2xl shadow-[0_8px_30px_rgba(0,0,0,0.04)] flex overflow-hidden relative print:h-auto print:overflow-visible print:border-none print:shadow-none">
+      <SEO 
+        title="Plexi | AI Assistant"
+        description="Interact with your course materials through an AI-powered study assistant. Get precise answers based on your notes and syllabus."
+      />
       {showScopePrompt && (
         <div className="absolute inset-0 z-50 bg-surface-container-lowest/90 backdrop-blur-sm flex items-center justify-center p-4 md:p-8">
           <div className="w-full max-w-4xl h-full md:h-auto max-h-[95vh] md:max-h-[80vh] bg-surface shadow-2xl rounded-3xl border border-outline-variant/20 overflow-hidden flex flex-col relative">
