@@ -224,19 +224,68 @@ const Layout: React.FC = () => {
                   <label className="block text-xs font-bold uppercase tracking-widest text-secondary font-label mb-2">
                     Model
                   </label>
-                  <input
-                    type="text"
-                    className="w-full bg-surface-container-high text-on-surface px-4 py-3 rounded-lg border border-transparent focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all"
-                    value={model}
-                    onChange={(e) => setModel(e.target.value)}
-                  />
+                  <div className="relative group">
+                    <select
+                      className="w-full bg-surface-container-high text-on-surface px-4 py-3 rounded-lg border border-transparent focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all appearance-none pr-10"
+                      value={model}
+                      onChange={(e) => setModel(e.target.value)}
+                    >
+                      {PROVIDERS.find((p) => p.id === providerId)?.models.map(
+                        (m) => (
+                          <option key={m} value={m}>
+                            {m}
+                          </option>
+                        ),
+                      )}
+                      <option value="custom">Custom...</option>
+                    </select>
+                    <span className="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-outline pointer-events-none group-focus-within:text-primary transition-colors">
+                      unfold_more
+                    </span>
+                  </div>
                 </div>
               </div>
 
+              {model === "custom" && (
+                <div className="animate-in fade-in slide-in-from-top-2 duration-200">
+                  <label className="block text-xs font-bold uppercase tracking-widest text-secondary font-label mb-2">
+                    Custom Model ID
+                  </label>
+                  <input
+                    type="text"
+                    className="w-full bg-surface-container-high text-on-surface px-4 py-3 rounded-lg border border-transparent focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all"
+                    placeholder="e.g. gpt-4-0613"
+                    autoFocus
+                    onBlur={(e) => {
+                      if (e.target.value.trim()) {
+                        setModel(e.target.value.trim());
+                      }
+                    }}
+                  />
+                </div>
+              )}
+
               <div>
-                <label className="block text-xs font-bold uppercase tracking-widest text-secondary font-label mb-2">
-                  API Key
-                </label>
+                <div className="flex justify-between items-center mb-2">
+                  <label className="block text-xs font-bold uppercase tracking-widest text-secondary font-label">
+                    API Key
+                  </label>
+                  {PROVIDERS.find((p) => p.id === providerId) && (
+                    <a
+                      href={
+                        PROVIDERS.find((p) => p.id === providerId)?.dashboardUrl
+                      }
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-[10px] font-bold text-primary hover:underline flex items-center gap-1 uppercase tracking-tighter"
+                    >
+                      Get Key
+                      <span className="material-symbols-outlined text-[12px]">
+                        open_in_new
+                      </span>
+                    </a>
+                  )}
+                </div>
                 <div className="relative">
                   <input
                     type="password"
