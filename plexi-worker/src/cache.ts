@@ -27,15 +27,15 @@ export async function retrieveCacheKey(
 
 /**
  * Build the cache key for a full LLM answer.
- * Scoped to provider + model so changing the LLM invalidates the cache.
+ * Scoped to query + context + model so changing any part invalidates the cache.
  */
 export async function answerCacheKey(
   query: string,
-  semester: string,
-  subject: string,
+  scope: string,
+  context: string,
   model: string,
 ): Promise<string> {
-  const normalized = `answer:${query.trim().toLowerCase()}:${semester}:${subject}:${model}`;
+  const normalized = `answer:${query.trim().toLowerCase()}:${scope}:${context}:${model}`;
   return hashKey(normalized);
 }
 

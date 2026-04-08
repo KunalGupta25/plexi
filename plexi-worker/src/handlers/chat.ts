@@ -23,9 +23,12 @@ export async function handleChat(request: Request, env: Env): Promise<Response> 
   const userMsg = [...messages].reverse().find((message: Message) => message.role === 'user');
   const queryText = userMsg?.content ?? '';
 
+  const systemMsg = messages.find((m: Message) => m.role === 'system');
+  const contextText = systemMsg?.content ?? '';
+
   let kvKey: string | null = null;
   if (clientCacheKey) {
-    kvKey = await answerCacheKey(queryText, clientCacheKey, '', model);
+    kvKey = await answerCacheKey(queryText, clientCacheKey, contextText, model);
     const cached = await env.PLEXI_CACHE.get(kvKey);
     if (cached) {
       const response: ChatResponse = { answer: cached, cached: true };
