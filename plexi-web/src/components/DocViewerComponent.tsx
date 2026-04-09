@@ -30,8 +30,23 @@ const DocViewerComponent: React.FC<DocViewerComponentProps> = ({
             disableFileName: true,
             retainURLParams: false,
           },
+          pdfZoom: {
+            defaultZoom: 1.1,
+            zoomJump: 0.2,
+          },
+          pdfVerticalScrollByDefault: true,
         }}
       />
+      <style>{`
+        #pdf-controls {
+          display: flex !important;
+          justify-content: center !important;
+          gap: 8px !important;
+        }
+        #pdf-controls button:nth-child(3) {
+          display: none !important;
+        }
+      `}</style>
     </div>
   );
 };

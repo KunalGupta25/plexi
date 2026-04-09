@@ -449,30 +449,6 @@ const Hub: React.FC = () => {
                       </span>
                     </div>
                   </div>
-
-                  <div className="flex items-center gap-2 shrink-0">
-                    <a
-                      href={selectedFileUrl}
-                      download
-                      className="p-3 rounded-xl bg-surface-container-high text-on-surface hover:bg-surface-container-highest transition-colors flex items-center justify-center group"
-                      title="Download File"
-                    >
-                      <span className="material-symbols-outlined text-[20px] group-hover:-translate-y-0.5 transition-transform">
-                        download
-                      </span>
-                    </a>
-                    <a
-                      href={selectedFileUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="px-6 py-3 rounded-xl text-sm font-bold bg-primary text-on-primary shadow-md shadow-primary/20 hover:shadow-primary/40 hover:-translate-y-0.5 transition-all flex items-center gap-2"
-                    >
-                      Open Tab
-                      <span className="material-symbols-outlined text-[18px]">
-                        open_in_new
-                      </span>
-                    </a>
-                  </div>
                 </div>
 
                 <div className="hidden lg:block h-px bg-outline-variant/30 w-full"></div>
