@@ -168,6 +168,46 @@ const Layout: React.FC = () => {
         <Outlet />
       </main>
 
+      {/* Footer */}
+      <footer className="w-full py-8 px-4 md:px-8 border-t border-outline-variant/30 bg-surface-container-lowest print:hidden mb-20 md:mb-0">
+        <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-6">
+          <div className="flex flex-col items-center md:items-start gap-2">
+            <span className="text-xl font-bold text-primary font-headline tracking-tight">
+              Plexi
+            </span>
+            <p className="text-sm text-on-surface-variant text-center md:text-left">
+              © {new Date().getFullYear()} Plexi. Built for students, by students.
+            </p>
+          </div>
+
+          <div className="flex flex-wrap justify-center items-center gap-6">
+            <a
+              href="https://github.com/KunalGupta25/plexi"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-2 text-sm font-bold text-on-surface-variant hover:text-primary transition-colors group"
+            >
+              <span className="material-symbols-outlined text-[20px] group-hover:scale-110 transition-transform">
+                star
+              </span>
+              Liked this Project? Star on GitHub
+            </a>
+            <div className="w-px h-4 bg-outline-variant/50 hidden md:block"></div>
+            <a
+              href="https://ko-fi.com/lazy_human"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-2 px-4 py-2 rounded-full bg-[#FF5E5B]/10 text-[#FF5E5B] hover:bg-[#FF5E5B] hover:text-white font-bold text-sm transition-all"
+            >
+              <span className="material-symbols-outlined text-[18px]">
+                favorite
+              </span>
+              Support on Ko-fi
+            </a>
+          </div>
+        </div>
+      </footer>
+
       {/* Settings Modal */}
       {isSettingsOpen && (
         <div
