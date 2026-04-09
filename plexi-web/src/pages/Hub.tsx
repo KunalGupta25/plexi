@@ -78,7 +78,6 @@ const Hub: React.FC = () => {
     () => getFiles(semester, subject, type),
     [semester, subject, type, getFiles],
   );
-  const selectedFileUrl = selectedFile?.download_url ?? selectedFile?.url ?? "";
 
   useEffect(() => {
     if (files.length === 0) {
