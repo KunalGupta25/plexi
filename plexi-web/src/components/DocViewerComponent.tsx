@@ -19,7 +19,7 @@ const DocViewerComponent: React.FC<DocViewerComponentProps> = ({
   ];
 
   return (
-    <div className="w-full h-full min-h-0 lg:min-h-[600px] flex flex-col relative bg-white rounded-md lg:rounded-xl overflow-hidden">
+    <div className="w-full h-full min-h-0 lg:min-h-[600px] flex flex-col relative bg-white overflow-hidden">
       <DocViewer
         documents={docs}
         pluginRenderers={DocViewerRenderers}

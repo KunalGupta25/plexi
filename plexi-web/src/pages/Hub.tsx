@@ -103,7 +103,9 @@ const Hub: React.FC = () => {
       }
 
       if (!fileToSelect) {
-        fileToSelect = files[0];
+        // Don't auto-select the first file anymore.
+        // Let the user pick from the list or rely on urlFile.
+        fileToSelect = null;
       }
 
       if (fileToSelect && fileToSelect.name !== urlFile) {
@@ -413,16 +415,16 @@ const Hub: React.FC = () => {
 
         {/* Right Column: Preview Surface */}
         <div
-          className={`lg:block ${selectedFile ? "fixed inset-0 z-50 p-4 bg-surface/80 backdrop-blur-sm lg:static lg:p-0 lg:bg-transparent lg:backdrop-blur-none lg:z-auto" : "hidden"}`}
+          className={`lg:block ${selectedFile ? "fixed inset-0 z-[100] lg:static lg:z-auto lg:p-0 bg-surface lg:bg-transparent lg:backdrop-blur-none" : "hidden"}`}
         >
-          <section className="bg-surface-container-lowest rounded-xl lg:rounded-3xl border border-outline-variant/30 shadow-2xl lg:shadow-sm p-2 lg:p-8 flex flex-col gap-2 lg:gap-6 h-full lg:h-auto lg:min-h-[600px] relative">
+          <section className="bg-surface-container-lowest lg:rounded-3xl border-0 lg:border border-outline-variant/30 shadow-2xl lg:shadow-sm p-0 lg:p-8 flex flex-col gap-0 lg:gap-6 h-full lg:h-auto lg:min-h-[600px] relative">
             {selectedFile ? (
               <>
                 <button
                   onClick={() => setSelectedFile(null)}
-                  className="lg:hidden absolute top-2 right-2 z-50 bg-surface-container-high hover:bg-surface-container-highest text-on-surface p-2 rounded-full transition-colors shadow-sm"
+                  className="lg:hidden absolute top-4 right-4 z-[110] bg-surface-container-high/80 backdrop-blur-md hover:bg-surface-container-highest text-on-surface p-2.5 rounded-full transition-colors shadow-lg border border-outline-variant/30"
                 >
-                  <span className="material-symbols-outlined text-[20px]">
+                  <span className="material-symbols-outlined text-[24px]">
                     close
                   </span>
                 </button>
@@ -476,7 +478,7 @@ const Hub: React.FC = () => {
                 <div className="hidden lg:block h-px bg-outline-variant/30 w-full"></div>
 
                 {/* Preview Content */}
-                <div className="flex-1 bg-surface-container-low rounded-md lg:rounded-2xl border border-outline-variant/20 overflow-hidden relative h-[calc(100dvh-6.5rem)] lg:h-auto min-h-0 lg:min-h-[500px] flex flex-col">
+                <div className="flex-1 bg-surface-container-low lg:rounded-2xl border-0 lg:border border-outline-variant/20 overflow-hidden relative h-full lg:h-auto min-h-0 lg:min-h-[500px] flex flex-col">
                   {preview.kind === "loading" && (
                     <div className="absolute inset-0 flex flex-col items-center justify-center bg-surface-container-lowest/80 backdrop-blur-sm z-10 gap-4">
                       <span className="material-symbols-outlined text-4xl text-primary animate-spin">
