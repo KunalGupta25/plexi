@@ -105,7 +105,9 @@ const Assistant: React.FC = () => {
   );
   const subjects = getSubjects(semester);
 
-  const buildSystemPrompt = (context: string) => `You are Plexi, a specialized AI study assistant for computer science students at Parul University. Your goal is to provide accurate, grounded answers based on the provided study materials.
+  const buildSystemPrompt = (
+    context: string,
+  ) => `You are Plexi, a specialized AI study assistant for computer science students at Parul University. Your goal is to provide accurate, grounded answers based on the provided study materials.
 
 ### STRICT RULES:
 1. **Groundedness**: Your answer MUST be based on the "STUDY MATERIALS CONTEXT" below. Do not use outside knowledge if the information is available in the context.
@@ -191,7 +193,7 @@ Please answer the student's question using the rules above. Prioritize the provi
 
   return (
     <div className="w-full h-[calc(100vh-8rem)] bg-surface-container-lowest border border-outline-variant/30 rounded-2xl shadow-[0_8px_30px_rgba(0,0,0,0.04)] flex overflow-hidden relative print:h-auto print:overflow-visible print:border-none print:shadow-none">
-      <SEO 
+      <SEO
         title="Plexi | AI Assistant"
         description="Interact with your course materials through an AI-powered study assistant. Get precise answers based on your notes and syllabus."
       />

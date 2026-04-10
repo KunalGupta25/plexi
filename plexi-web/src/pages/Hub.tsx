@@ -102,8 +102,6 @@ const Hub: React.FC = () => {
       }
 
       if (!fileToSelect) {
-        // Don't auto-select the first file anymore.
-        // Let the user pick from the list or rely on urlFile.
         fileToSelect = null;
       }
 
@@ -240,42 +238,118 @@ const Hub: React.FC = () => {
   }
 
   return (
-    <div className="w-full max-w-7xl mx-auto py-4 md:py-8 flex flex-col gap-8 md:gap-12 min-h-screen">
-      <SEO 
-        title="Plexi | Material Hub"
-        description="Browse and preview study materials organized by semester and subject. Access notes, PPTs, and previous year questions instantly."
+    <div className="flex flex-col gap-4 md:gap-8 pb-20 md:pb-0">
+      <SEO
+        title="Material Hub | Plexi"
+        description="Browse and preview study materials, notes, and previous year papers."
       />
-      {/* Hero Context */}
-      <section className="mb-2">
-        <h1 className="text-display-lg text-4xl md:text-5xl lg:text-6xl font-black font-headline tracking-tight text-primary mb-4">
-          The Digital Curator
-        </h1>
-        <p className="text-secondary max-w-2xl text-lg font-light leading-relaxed">
-          Access the university's collective intelligence. Seamlessly traverse
-          semesters, subjects, and specific study materials with precision.
-        </p>
-      </section>
 
-      {/* Inline Selector Sequence */}
-      <section className="mb-2">
-        <div className="bg-surface-container-low rounded-3xl md:rounded-[2rem] p-6 md:p-8 shadow-inner border border-outline-variant/20">
-          <div className="flex flex-col space-y-6 md:space-y-8">
-            {/* Step 1: Semester Selection */}
+      {/* App-Style Header (Mobile Only) */}
+      <div
+        className={`lg:hidden flex flex-col gap-2 animate-fade-in-up ${selectedFile ? "hidden" : "flex"}`}
+      >
+        <h1 className="text-4xl font-black font-headline text-on-surface tracking-tighter">
+          The Digital <span className="text-primary">Curator</span>
+        </h1>
+
+        {/* Scrolling Filters */}
+        <div className="flex flex-col gap-4 -mx-4 px-4 mt-2">
+          <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
+            {semesters.map((sem) => (
+              <button
+                key={sem}
+                onClick={() => handleSemesterChange(sem)}
+                className={`px-5 py-2.5 rounded-2xl text-xs font-bold whitespace-nowrap transition-all border ${
+                  semester === sem
+                    ? "bg-primary border-primary text-on-primary shadow-lg shadow-primary/20"
+                    : "bg-surface-container-low border-outline-variant/30 text-on-surface-variant"
+                }`}
+              >
+                {sem}
+              </button>
+            ))}
+          </div>
+
+          <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
+            {subjects.length === 0 ? (
+              <span className="text-xs text-text-muted/50 italic px-2">
+                Select semester...
+              </span>
+            ) : (
+              subjects.map((sub) => (
+                <button
+                  key={sub}
+                  onClick={() => handleSubjectChange(sub)}
+                  className={`px-5 py-2.5 rounded-2xl text-xs font-bold whitespace-nowrap transition-all border ${
+                    subject === sub
+                      ? "bg-on-surface border-on-surface text-background shadow-md"
+                      : "bg-surface-container-low border-outline-variant/30 text-on-surface-variant"
+                  }`}
+                >
+                  {sub}
+                </button>
+              ))
+            )}
+          </div>
+
+          {subject && (
+            <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
+              {types.map((t) => (
+                <button
+                  key={t}
+                  onClick={() => handleTypeChange(t)}
+                  className={`flex items-center gap-2 px-5 py-2.5 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all border ${
+                    type === t
+                      ? "bg-primary/10 border-primary/30 text-primary"
+                      : "bg-transparent border-outline-variant/30 text-text-muted"
+                  }`}
+                >
+                  <span className="material-symbols-outlined text-[16px]">
+                    {t.toLowerCase().includes("pdf")
+                      ? "picture_as_pdf"
+                      : "description"}
+                  </span>
+                  {t}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Digital Curator (Desktop Only) */}
+      <section className="hidden lg:flex flex-col gap-8 p-10 bg-surface-container-lowest rounded-[40px] border border-outline-variant/30 shadow-sm relative overflow-hidden animate-fade-in-up">
+        <div className="absolute top-0 left-0 w-2 h-full bg-primary/20"></div>
+        <div className="flex flex-col gap-2 relative">
+          <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-primary/60 font-label">
+            <span className="material-symbols-outlined text-[18px]">
+              filter_list
+            </span>
+            Discovery Engine
+          </div>
+          <h1 className="text-5xl font-black font-headline text-on-surface tracking-tight">
+            The Digital <span className="text-primary">Curator</span>
+          </h1>
+        </div>
+
+        <div className="flex flex-col gap-10">
+          <div className="grid gap-8">
+            {/* Semester */}
             <div className="flex flex-col md:flex-row md:items-center gap-6">
               <div className="w-32 shrink-0">
-                <span className="text-xs font-bold uppercase tracking-widest text-secondary font-label">
+                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-text-muted">
                   Semester
                 </span>
               </div>
-              <div className="flex flex-wrap gap-2">
+              <div className="flex flex-wrap gap-3">
                 {semesters.map((sem) => (
                   <button
                     key={sem}
                     onClick={() => handleSemesterChange(sem)}
-                    className={`px-5 py-2 rounded-full text-sm font-medium transition-colors ${
+                    className={`px-6 py-2.5 rounded-xl text-xs font-bold transition-all ${
                       semester === sem
-                        ? "bg-primary-fixed text-on-primary-fixed shadow-sm"
-                        : "bg-surface-container-high text-on-surface hover:bg-surface-container-highest"
+                        ? "bg-primary text-on-primary shadow-lg shadow-primary/20 scale-105"
+                        : "bg-surface-container-highest/40 text-on-surface hover:bg-surface-container-highest/80"
                     }`}
                   >
                     {sem}
@@ -284,29 +358,29 @@ const Hub: React.FC = () => {
               </div>
             </div>
 
-            {/* Step 2: Subject Selection */}
-            <div className="flex flex-col md:flex-row md:items-center gap-6">
-              <div className="w-32 shrink-0">
+            {/* Subject */}
+            <div className="flex flex-col md:flex-row md:items-start gap-6">
+              <div className="w-32 shrink-0 mt-2">
                 <span
-                  className={`text-xs font-bold uppercase tracking-widest font-label ${semester ? "text-secondary" : "text-outline/50"}`}
+                  className={`text-[10px] font-black uppercase tracking-[0.2em] ${semester ? "text-text-muted" : "text-text-muted/30"}`}
                 >
                   Subject
                 </span>
               </div>
-              <div className="flex flex-wrap gap-3">
+              <div className="flex flex-wrap gap-2">
                 {!semester && (
-                  <span className="text-sm text-outline italic">
-                    Select a semester first
+                  <span className="text-sm text-text-muted/50 italic py-2">
+                    Pick a semester to unlock subjects
                   </span>
                 )}
                 {subjects.map((sub) => (
                   <button
                     key={sub}
                     onClick={() => handleSubjectChange(sub)}
-                    className={`px-6 py-2 rounded-lg text-sm transition-all ${
+                    className={`px-5 py-2.5 rounded-xl text-xs font-medium transition-all ${
                       subject === sub
-                        ? "bg-primary-container border-b-2 border-primary font-bold text-primary shadow-sm"
-                        : "text-on-surface-variant hover:bg-surface-container-high"
+                        ? "bg-primary/10 border border-primary/30 text-primary font-bold"
+                        : "text-text-muted hover:text-on-surface hover:bg-surface-container-highest/40"
                     }`}
                   >
                     {sub}
@@ -315,18 +389,18 @@ const Hub: React.FC = () => {
               </div>
             </div>
 
-            {/* Step 3: Material Type */}
+            {/* Format */}
             <div className="flex flex-col md:flex-row md:items-center gap-6">
               <div className="w-32 shrink-0">
                 <span
-                  className={`text-xs font-bold uppercase tracking-widest font-label ${subject ? "text-secondary" : "text-outline/50"}`}
+                  className={`text-[10px] font-black uppercase tracking-[0.2em] ${subject ? "text-text-muted" : "text-text-muted/30"}`}
                 >
                   Format
                 </span>
               </div>
               <div className="flex flex-wrap gap-3">
                 {!subject && (
-                  <span className="text-sm text-outline italic">
+                  <span className="text-sm text-text-muted/50 italic">
                     Select a subject first
                   </span>
                 )}
@@ -334,10 +408,10 @@ const Hub: React.FC = () => {
                   <button
                     key={t}
                     onClick={() => handleTypeChange(t)}
-                    className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm transition-all ${
+                    className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold uppercase tracking-widest transition-all border ${
                       type === t
-                        ? "bg-primary-fixed text-on-primary-fixed font-bold shadow-sm ring-1 ring-primary/30"
-                        : "bg-surface-container-high text-on-surface-variant hover:bg-surface-container-highest"
+                        ? "bg-on-surface text-background border-on-surface shadow-md"
+                        : "bg-surface-container-highest/40 border-transparent text-text-muted hover:border-border/50 hover:text-on-surface"
                     }`}
                   >
                     <span className="material-symbols-outlined text-[18px]">
@@ -356,15 +430,17 @@ const Hub: React.FC = () => {
         </div>
       </section>
 
-      {/* Main Workspace: File List & Preview */}
-      <div className="grid grid-cols-1 lg:grid-cols-[1fr_2fr] gap-6 md:gap-8 items-start">
-        {/* Left Column: File List */}
-        <section className="bg-surface-container-lowest rounded-3xl border border-outline-variant/30 shadow-sm p-5 md:p-6 flex flex-col gap-4 md:gap-6 sticky top-24 lg:max-h-[calc(100vh-8rem)]">
+      {/* Main Workspace */}
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_2fr] gap-6 md:gap-8 min-w-0">
+        {/* File List */}
+        <section
+          className={`bg-surface-container-lowest rounded-[2rem] border border-outline-variant/30 shadow-sm p-6 flex flex-col gap-6 sticky top-24 lg:max-h-[calc(100vh-8rem)] min-h-0 min-w-0 animate-fade-in-up delay-200 ${selectedFile ? "hidden lg:flex" : "flex"}`}
+        >
           <div className="flex items-center justify-between">
             <h2 className="font-headline font-bold text-lg text-on-surface">
               Available Files
             </h2>
-            <span className="px-3 py-1 rounded-full text-xs font-bold bg-primary-fixed text-on-primary-fixed">
+            <span className="px-3 py-1 rounded-full text-[10px] font-black bg-primary-fixed text-on-primary-fixed uppercase tracking-wider">
               {files.length} found
             </span>
           </div>
@@ -372,12 +448,12 @@ const Hub: React.FC = () => {
           <div className="h-px bg-outline-variant/30 w-full"></div>
 
           {files.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-12 text-center gap-4 opacity-50">
-              <span className="material-symbols-outlined text-5xl">
-                folder_off
+            <div className="flex flex-col items-center justify-center py-20 text-center gap-4 opacity-30">
+              <span className="material-symbols-outlined text-6xl">
+                folder_open
               </span>
-              <p className="text-sm">
-                No files to display. Please refine your selection.
+              <p className="text-sm font-medium">
+                Select filters to <br /> view materials
               </p>
             </div>
           ) : (
@@ -386,96 +462,109 @@ const Hub: React.FC = () => {
                 <button
                   key={file.name}
                   onClick={() => handleFileSelect(file)}
-                  className={`flex items-center gap-3 p-4 rounded-xl text-left transition-all border ${
+                  className={`group flex items-center gap-4 p-4 rounded-2xl text-left transition-all border ${
                     selectedFile?.name === file.name
-                      ? "bg-primary-fixed/40 border-primary-fixed text-primary shadow-sm"
-                      : "bg-surface-container-lowest border-transparent hover:bg-surface-container-low hover:border-outline-variant/50 text-on-surface"
+                      ? "bg-primary/5 border-primary/20 text-primary shadow-sm"
+                      : "bg-transparent border-transparent hover:bg-surface-container-low hover:border-outline-variant/30 text-on-surface"
                   }`}
                 >
-                  <span className="material-symbols-outlined text-[20px] shrink-0 text-primary/70">
-                    draft
-                  </span>
+                  <div
+                    className={`p-2.5 rounded-xl transition-colors ${selectedFile?.name === file.name ? "bg-primary text-on-primary" : "bg-surface-container-high text-on-surface-variant group-hover:bg-primary/10 group-hover:text-primary"}`}
+                  >
+                    <span className="material-symbols-outlined text-[22px] block">
+                      {file.name.endsWith(".pdf")
+                        ? "picture_as_pdf"
+                        : "description"}
+                    </span>
+                  </div>
                   <span
-                    className="text-sm font-medium truncate flex-1"
+                    className="text-sm font-bold truncate flex-1"
                     title={formatFileName(file.name)}
                   >
                     {formatFileName(file.name)}
                   </span>
-                  {selectedFile?.name === file.name && (
-                    <span className="material-symbols-outlined text-[18px] shrink-0">
-                      chevron_right
-                    </span>
-                  )}
+                  <span className="material-symbols-outlined text-[18px] opacity-0 group-hover:opacity-100 transition-opacity lg:block hidden">
+                    arrow_forward_ios
+                  </span>
                 </button>
               ))}
             </div>
           )}
         </section>
 
-        {/* Right Column: Preview Surface */}
+        {/* Preview Surface */}
         <div
-          className={`lg:block ${selectedFile ? "fixed inset-0 z-[100] lg:static lg:z-auto lg:p-0 bg-surface lg:bg-transparent lg:backdrop-blur-none" : "hidden"}`}
+          className={`lg:block min-w-0 ${selectedFile ? "block" : "hidden"}`}
         >
-          <section className="bg-surface-container-lowest lg:rounded-3xl border-0 lg:border border-outline-variant/30 shadow-2xl lg:shadow-sm p-0 lg:p-8 flex flex-col gap-0 lg:gap-6 h-full lg:h-auto lg:min-h-[600px] relative">
+          <section
+            className={`
+              bg-surface-container-lowest lg:rounded-[2rem] lg:border border-outline-variant/30 shadow-2xl lg:shadow-sm flex flex-col gap-0 lg:gap-6 relative lg:sticky lg:top-24 overflow-hidden min-w-0 z-40 h-full lg:h-auto
+              ${selectedFile ? "fixed inset-0 lg:static lg:p-8" : "p-0 lg:p-8 lg:min-h-[600px] flex items-center justify-center"}
+            `}
+          >
             {selectedFile ? (
               <>
-                <button
-                  onClick={() => setSelectedFile(null)}
-                  className="lg:hidden absolute top-4 right-4 z-[110] bg-surface-container-high/80 backdrop-blur-md hover:bg-surface-container-highest text-on-surface p-2.5 rounded-full transition-colors shadow-lg border border-outline-variant/30"
-                >
-                  <span className="material-symbols-outlined text-[24px]">
-                    close
-                  </span>
-                </button>
-                {/* File Header */}
-                <div className="hidden lg:flex flex-col sm:flex-row sm:items-start justify-between gap-4 pr-10 lg:pr-0">
-                  <div className="flex flex-col gap-2">
-                    <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-primary font-label">
-                      <span className="material-symbols-outlined text-[16px]">
-                        visibility
-                      </span>
-                      Preview Surface
+                {/* Mobile Back Button & Header */}
+                <div className="flex items-center gap-4 p-4 lg:p-0 bg-surface-container-lowest lg:bg-transparent border-b lg:border-0 border-outline-variant/20 shrink-0">
+                  <button
+                    onClick={() => setSelectedFile(null)}
+                    className="lg:hidden p-2 rounded-xl bg-surface-container-high hover:bg-surface-container-highest transition-colors"
+                  >
+                    <span className="material-symbols-outlined text-[24px] block">
+                      arrow_back
+                    </span>
+                  </button>
+                  <div className="flex flex-col min-w-0">
+                    <div className="lg:hidden flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60">
+                      Material Preview
                     </div>
-                    <h3 className="text-2xl font-bold font-headline text-on-surface break-words">
+                    <h3 className="text-lg lg:text-2xl font-black font-headline text-on-surface truncate leading-tight">
                       {formatFileName(selectedFile.name)}
                     </h3>
-                    <div className="flex items-center gap-2 mt-1">
-                      <span className="px-2.5 py-1 rounded text-xs font-medium bg-surface-container text-on-surface-variant">
-                        {semester}
-                      </span>
-                      <span className="px-2.5 py-1 rounded text-xs font-medium bg-surface-container text-on-surface-variant">
-                        {subject}
-                      </span>
-                    </div>
                   </div>
                 </div>
 
-                <div className="hidden lg:block h-px bg-outline-variant/30 w-full"></div>
+                {/* Desktop Metadata */}
+                <div className="hidden lg:flex flex-col gap-2 shrink-0">
+                  <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-primary font-label">
+                    <span className="material-symbols-outlined text-[16px]">
+                      visibility
+                    </span>
+                    Preview Surface
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="px-3 py-1 rounded-lg text-[10px] font-black bg-surface-container text-on-surface-variant uppercase tracking-wider">
+                      {semester}
+                    </span>
+                    <span className="px-3 py-1 rounded-lg text-[10px] font-black bg-surface-container text-on-surface-variant uppercase tracking-wider">
+                      {subject}
+                    </span>
+                  </div>
+                </div>
 
-                {/* Preview Content */}
-                <div className="flex-1 bg-surface-container-low lg:rounded-2xl border-0 lg:border border-outline-variant/20 overflow-hidden relative h-full lg:h-auto min-h-0 lg:min-h-[500px] flex flex-col">
+                <div className="hidden lg:block h-px bg-outline-variant/30 w-full shrink-0"></div>
+
+                {/* Preview Frame */}
+                <div className="flex-1 lg:bg-surface-container-low lg:rounded-2xl lg:border border-outline-variant/20 overflow-hidden relative min-h-0 flex flex-col bg-white">
                   {preview.kind === "loading" && (
                     <div className="absolute inset-0 flex flex-col items-center justify-center bg-surface-container-lowest/80 backdrop-blur-sm z-10 gap-4">
                       <span className="material-symbols-outlined text-4xl text-primary animate-spin">
                         progress_activity
                       </span>
-                      <p className="text-sm font-medium text-secondary">
-                        Generating preview...
+                      <p className="text-sm font-bold tracking-widest uppercase text-secondary">
+                        Preparing...
                       </p>
                     </div>
                   )}
 
                   {preview.kind === "doc" && (
-                    <div className="flex-1 w-full relative h-full min-h-0 lg:min-h-[600px] bg-white">
+                    <div className="w-full relative bg-white overflow-hidden flex-1">
                       <Suspense
                         fallback={
                           <div className="flex flex-col items-center justify-center h-full gap-4">
                             <span className="material-symbols-outlined text-4xl text-primary animate-spin">
                               progress_activity
                             </span>
-                            <p className="text-sm font-medium text-secondary">
-                              Loading viewer...
-                            </p>
                           </div>
                         }
                       >
@@ -488,22 +577,21 @@ const Hub: React.FC = () => {
                   )}
 
                   {preview.kind === "office" && (
-                    <div className="flex-1 flex flex-col w-full relative h-full min-h-0 lg:min-h-[600px] bg-white overflow-hidden">
-                      <div className="hidden lg:flex bg-surface-container-high p-2 text-center text-xs text-on-surface-variant shrink-0 border-b border-outline-variant/20 flex-col sm:flex-row items-center justify-center gap-3">
-                        <span>
-                          If the preview is blocked, try switching the viewer or
-                          use the <strong>Download</strong> button above.
+                    <div className="flex-1 flex flex-col w-full relative min-h-0 bg-white overflow-hidden">
+                      <div className="bg-surface-container-high p-2 text-center text-[10px] font-bold text-on-surface-variant shrink-0 border-b border-outline-variant/20 flex items-center justify-center gap-4">
+                        <span className="hidden sm:block">
+                          Office Preview Mode
                         </span>
                         <div className="flex items-center bg-surface-container rounded-lg p-0.5 border border-outline-variant/30">
                           <button
                             onClick={() => setOfficeViewer("microsoft")}
-                            className={`px-3 py-1 rounded-md text-[10px] font-bold uppercase tracking-widest transition-colors ${officeViewer === "microsoft" ? "bg-primary text-on-primary shadow-sm" : "text-on-surface-variant hover:bg-surface-container-highest"}`}
+                            className={`px-3 py-1 rounded-md text-[9px] font-black uppercase tracking-tighter transition-colors ${officeViewer === "microsoft" ? "bg-primary text-on-primary shadow-sm" : "text-on-surface-variant"}`}
                           >
-                            Microsoft
+                            MS View
                           </button>
                           <button
                             onClick={() => setOfficeViewer("google")}
-                            className={`px-3 py-1 rounded-md text-[10px] font-bold uppercase tracking-widest transition-colors ${officeViewer === "google" ? "bg-primary text-on-primary shadow-sm" : "text-on-surface-variant hover:bg-surface-container-highest"}`}
+                            className={`px-3 py-1 rounded-md text-[9px] font-black uppercase tracking-tighter transition-colors ${officeViewer === "google" ? "bg-primary text-on-primary shadow-sm" : "text-on-surface-variant"}`}
                           >
                             Google
                           </button>
@@ -523,40 +611,38 @@ const Hub: React.FC = () => {
                   )}
 
                   {preview.kind === "image" && (
-                    <div className="flex-1 flex items-center justify-center p-3 lg:p-8 bg-surface-container-lowest">
+                    <div className="flex-1 flex items-center justify-center p-4 bg-surface-container-lowest overflow-auto">
                       <img
                         src={preview.url}
                         alt={selectedFile.name}
-                        className="max-w-full max-h-[700px] object-contain rounded-xl shadow-sm border border-outline-variant/20"
+                        className="max-w-full rounded-2xl shadow-2xl border border-outline-variant/20"
                       />
                     </div>
                   )}
 
                   {preview.kind === "text" && (
-                    <div className="flex-1 p-3 lg:p-6 overflow-y-auto bg-surface-container-lowest font-mono text-sm text-on-surface leading-relaxed whitespace-pre-wrap break-words">
+                    <div className="flex-1 p-6 overflow-y-auto bg-surface-container-lowest font-mono text-sm text-on-surface leading-relaxed whitespace-pre-wrap break-words">
                       {preview.content}
                     </div>
                   )}
 
                   {preview.kind === "unsupported" && (
-                    <div className="flex-1 flex flex-col items-center justify-center p-4 lg:p-8 text-center gap-4">
-                      <span className="material-symbols-outlined text-5xl text-outline/40 mb-2">
-                        unknown_document
+                    <div className="flex-1 flex flex-col items-center justify-center p-8 text-center gap-4">
+                      <span className="material-symbols-outlined text-6xl text-outline/20">
+                        quick_reference_all
                       </span>
-                      <p className="text-on-surface-variant max-w-sm text-sm leading-relaxed">
-                        Preview is not available for this format yet. You can
-                        still open or download the file directly using the
-                        actions above.
+                      <p className="text-on-surface-variant font-bold text-sm">
+                        Preview Unavailable
                       </p>
                     </div>
                   )}
 
                   {preview.kind === "error" && (
-                    <div className="flex-1 flex flex-col items-center justify-center p-4 lg:p-8 text-center gap-4 bg-error-container/20">
-                      <span className="material-symbols-outlined text-4xl text-error mb-2">
+                    <div className="flex-1 flex flex-col items-center justify-center p-8 text-center gap-4">
+                      <span className="material-symbols-outlined text-5xl text-error/40">
                         warning
                       </span>
-                      <p className="text-on-surface-variant text-sm font-medium">
+                      <p className="text-error font-bold text-sm">
                         {preview.message}
                       </p>
                     </div>
@@ -564,19 +650,21 @@ const Hub: React.FC = () => {
                 </div>
               </>
             ) : (
-              <div className="flex-1 flex flex-col items-center justify-center p-12 text-center gap-6 h-full min-h-[500px]">
-                <div className="w-32 h-32 rounded-full bg-surface-container-high flex items-center justify-center mb-2">
-                  <span className="material-symbols-outlined text-6xl text-outline/50">
-                    find_in_page
+              <div className="hidden lg:flex flex-col items-center text-center gap-6 max-w-md animate-fade-in-up">
+                <div className="w-24 h-24 bg-surface-container-high rounded-3xl flex items-center justify-center shadow-inner">
+                  <span className="material-symbols-outlined text-5xl text-primary/40">
+                    quick_reference_all
                   </span>
                 </div>
-                <h2 className="text-3xl font-black font-headline text-on-surface tracking-tight">
-                  Inspection Workspace
-                </h2>
-                <p className="text-on-surface-variant max-w-md text-base leading-relaxed">
-                  Select a document from the list on the left to render a live
-                  preview here. Your place is saved as you browse.
-                </p>
+                <div className="flex flex-col gap-2">
+                  <h3 className="text-2xl font-black font-headline text-on-surface tracking-tight">
+                    Inspection Workspace
+                  </h3>
+                  <p className="text-sm text-on-surface-variant font-medium leading-relaxed px-4">
+                    Select a document from the list on the left to render a live
+                    preview here. Your place is saved as you browse.
+                  </p>
+                </div>
               </div>
             )}
           </section>

@@ -48,24 +48,24 @@ const Layout: React.FC = () => {
   const isActive = (path: string) => location.pathname === path;
 
   return (
-    <div className="bg-surface text-on-surface selection:bg-primary-fixed selection:text-on-primary-fixed min-h-screen flex flex-col font-body">
+    <div className="bg-background text-on-surface selection:bg-primary-fixed selection:text-on-primary-fixed min-h-screen flex flex-col font-body antialiased">
       {/* Desktop Navbar */}
-      <header className="hidden md:block print:hidden fixed top-0 w-full z-50 bg-surface/80 backdrop-blur-md border-b border-outline-variant/30">
-        <nav className="flex justify-between items-center h-16 px-8 max-w-full mx-auto">
-          <div className="flex items-center gap-8">
+      <header className="hidden md:block print:hidden fixed top-0 w-full z-50 bg-background/60 backdrop-blur-xl border-b border-border/50">
+        <nav className="flex justify-between items-center h-16 px-8 max-w-7xl mx-auto w-full">
+          <div className="flex items-center gap-12">
             <Link
               to="/"
-              className="text-2xl font-bold text-primary font-headline tracking-tight"
+              className="text-2xl font-black text-primary font-headline tracking-tighter"
             >
-              Plexi Hub
+              Plexi
             </Link>
-            <div className="flex items-center gap-6 font-headline text-sm tracking-tight">
+            <div className="flex items-center gap-8 font-label text-sm font-medium tracking-tight">
               <Link
                 to="/hub"
                 className={
                   isActive("/hub")
-                    ? "text-primary font-bold border-b-2 border-primary pb-1 transition-colors duration-200 ease-in-out scale-95 active:opacity-80"
-                    : "text-on-surface-variant hover:text-primary transition-colors duration-200 ease-in-out scale-95 active:opacity-80"
+                    ? "text-primary font-bold transition-colors"
+                    : "text-text-muted hover:text-on-surface transition-colors"
                 }
               >
                 Materials
@@ -74,42 +74,58 @@ const Layout: React.FC = () => {
                 to="/assistant"
                 className={
                   isActive("/assistant")
-                    ? "text-primary font-bold border-b-2 border-primary pb-1 transition-colors duration-200 ease-in-out scale-95 active:opacity-80"
-                    : "text-on-surface-variant hover:text-primary transition-colors duration-200 ease-in-out scale-95 active:opacity-80"
+                    ? "text-primary font-bold transition-colors"
+                    : "text-text-muted hover:text-on-surface transition-colors"
                 }
               >
                 Chat
               </Link>
             </div>
           </div>
-          <div className="flex items-center gap-4">
-            <button
-              onClick={toggleTheme}
-              className="p-2 text-on-surface-variant hover:bg-surface-container-high rounded-full transition-colors duration-200 ease-in-out scale-95 active:opacity-80 flex items-center justify-center"
-              aria-label="Toggle Theme"
+          <div className="flex items-center gap-6">
+            <div className="flex items-center gap-2">
+              <button
+                onClick={toggleTheme}
+                className="p-2 text-text-muted hover:text-on-surface transition-colors"
+                aria-label="Toggle Theme"
+              >
+                <span className="material-symbols-outlined text-[20px]">
+                  {theme === "dark" ? "light_mode" : "dark_mode"}
+                </span>
+              </button>
+              <button
+                onClick={() => setIsSettingsOpen(true)}
+                className="p-2 text-text-muted hover:text-on-surface transition-colors"
+                aria-label="Global Settings"
+              >
+                <span className="material-symbols-outlined text-[20px]">
+                  settings
+                </span>
+              </button>
+            </div>
+            <Link
+              to="/assistant"
+              className="px-6 py-2.5 rounded-full text-sm font-bold bg-primary text-on-primary shadow-lg shadow-primary/20 hover:shadow-primary/40 hover:-translate-y-0.5 transition-all"
             >
-              <span className="material-symbols-outlined">
-                {theme === "dark" ? "light_mode" : "dark_mode"}
-              </span>
-            </button>
-            <button
-              onClick={() => setIsSettingsOpen(true)}
-              className="p-2 text-on-surface-variant hover:bg-surface-container-high rounded-full transition-colors duration-200 ease-in-out scale-95 active:opacity-80 flex items-center justify-center"
-              aria-label="Global Settings"
-            >
-              <span className="material-symbols-outlined">settings</span>
-            </button>
+              Get Started
+            </Link>
           </div>
         </nav>
       </header>
 
       {/* Mobile Top Header */}
-      <header className="md:hidden print:hidden fixed top-0 w-full z-50 bg-surface/80 backdrop-blur-md border-b border-outline-variant/30 h-14 flex items-center px-4">
+      <header className="md:hidden print:hidden fixed top-0 w-full z-50 bg-background/60 backdrop-blur-xl border-b border-border/50 h-16 flex items-center justify-between px-6">
         <Link
           to="/"
-          className="text-xl font-bold text-primary font-headline tracking-tight"
+          className="text-2xl font-black text-primary font-headline tracking-tighter"
         >
-          Plexi Hub
+          Plexi
+        </Link>
+        <Link
+          to="/assistant"
+          className="px-5 py-2 rounded-full text-xs font-bold bg-primary text-on-primary shadow-md shadow-primary/20"
+        >
+          Get Started
         </Link>
       </header>
 
@@ -176,7 +192,8 @@ const Layout: React.FC = () => {
               Plexi
             </span>
             <p className="text-sm text-on-surface-variant text-center md:text-left">
-              © {new Date().getFullYear()} Plexi. Built for students, by students.
+              © {new Date().getFullYear()} Plexi. Built for students, by
+              students.
             </p>
           </div>
 
