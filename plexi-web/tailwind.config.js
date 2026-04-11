@@ -4,6 +4,10 @@ export default {
   darkMode: ["selector", '[data-theme="dark"]'],
   theme: {
     extend: {
+      boxShadow: {
+        card: "var(--card-shadow)",
+        "card-lg": "var(--card-shadow-lg)",
+      },
       colors: {
         "surface-container-low": "var(--color-surface-container-low)",
         "primary-fixed": "var(--color-primary-fixed)",
@@ -59,7 +63,6 @@ export default {
         DEFAULT: "0.125rem",
         lg: "0.25rem",
         xl: "0.5rem",
-        full: "0.75rem",
       },
       fontFamily: {
         headline: ["Manrope", "sans-serif"],

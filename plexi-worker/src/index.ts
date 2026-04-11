@@ -1,13 +1,31 @@
 // src/index.ts — Plexi Cloudflare Worker entry point
 // Routes all /api/* requests to the appropriate handler.
 
-import { handleChat } from "./handlers/chat";
+import { handleChat, handleChatStream } from "./handlers/chat";
 import { handleFile } from "./handlers/file";
 import { handleManifest } from "./handlers/manifest";
 import { handleRetrieve } from "./handlers/retrieve";
 import { Env } from "./types";
 
 // ── CORS ──────────────────────────────────────────────────────────────────────
+
+/** Build the allowed origins whitelist from the configured FRONTEND_ORIGIN. */
+function getAllowedOrigins(env: Env): string[] {
+  return [
+    env.FRONTEND_ORIGIN,
+    "http://localhost:5173",
+    "http://localhost:4173",
+    "http://127.0.0.1:5173",
+  ].filter(Boolean);
+}
+
+/** Validate the request Origin against the whitelist. Returns the origin if valid, null otherwise. */
+function getValidatedOrigin(request: Request, env: Env): string | null {
+  const origin = request.headers.get("Origin");
+  if (!origin) return env.FRONTEND_ORIGIN; // Same-origin or non-browser requests
+  const allowed = getAllowedOrigins(env);
+  return allowed.includes(origin) ? origin : null;
+}
 
 function corsHeaders(origin: string): Record<string, string> {
   return {
@@ -19,7 +37,10 @@ function corsHeaders(origin: string): Record<string, string> {
 }
 
 function handleOptions(request: Request, env: Env): Response {
-  const origin = request.headers.get("Origin") ?? env.FRONTEND_ORIGIN;
+  const origin = getValidatedOrigin(request, env);
+  if (!origin) {
+    return new Response(null, { status: 403 });
+  }
   return new Response(null, {
     status: 204,
     headers: corsHeaders(origin),
@@ -27,7 +48,13 @@ function handleOptions(request: Request, env: Env): Response {
 }
 
 function withCors(response: Response, request: Request, env: Env): Response {
-  const origin = request.headers.get("Origin") ?? env.FRONTEND_ORIGIN;
+  const origin = getValidatedOrigin(request, env);
+  if (!origin) {
+    return new Response(JSON.stringify({ error: "Origin not allowed" }), {
+      status: 403,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
   const headers = new Headers(response.headers);
   Object.entries(corsHeaders(origin)).forEach(([k, v]) => headers.set(k, v));
   return new Response(response.body, {
@@ -58,6 +85,8 @@ export default {
     // ── Route table ──────────────────────────────────────────────────────────
     if (path === "/api/retrieve" && request.method === "POST") {
       response = await handleRetrieve(request, env);
+    } else if (path === "/api/chat/stream" && request.method === "POST") {
+      response = await handleChatStream(request, env);
     } else if (path === "/api/chat" && request.method === "POST") {
       response = await handleChat(request, env);
     } else if (path === "/api/manifest" && request.method === "GET") {

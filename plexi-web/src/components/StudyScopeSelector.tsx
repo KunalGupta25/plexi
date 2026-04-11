@@ -81,7 +81,7 @@ export default function StudyScopeSelector({
               </span>
               Choose Semester
             </h2>
-            <div className="flex-1 space-y-2 p-1 -m-1 lg:overflow-y-auto pr-3 pb-4 custom-scrollbar lg:min-h-0">
+            <div className="flex-1 space-y-2 p-1 -m-1 lg:overflow-y-auto pr-3 pb-4 custom-scrollbar lg:min-h-0 no-scrollbar">
               {semesters.map((sem) => {
                 const isActive = selectedSemester === sem;
                 return (

@@ -14,14 +14,10 @@ export async function checkRateLimit(ip: string, env: Env): Promise<boolean> {
     return false;
   }
 
-  const nextValue = String(current + 1);
-  if (current === 0) {
-    await env.PLEXI_CACHE.put(key, nextValue, {
-      expirationTtl: RATE_LIMIT_TTL,
-    });
-  } else {
-    await env.PLEXI_CACHE.put(key, nextValue);
-  }
+  // Always set TTL to prevent immortal keys
+  await env.PLEXI_CACHE.put(key, String(current + 1), {
+    expirationTtl: RATE_LIMIT_TTL,
+  });
 
   return true;
 }

@@ -259,11 +259,10 @@ const Hub: React.FC = () => {
               <button
                 key={sem}
                 onClick={() => handleSemesterChange(sem)}
-                className={`px-5 py-2.5 rounded-2xl text-xs font-bold whitespace-nowrap transition-all border ${
-                  semester === sem
+                className={`px-5 py-2.5 rounded-2xl text-xs font-bold whitespace-nowrap transition-all border ${semester === sem
                     ? "bg-primary border-primary text-on-primary shadow-lg shadow-primary/20"
                     : "bg-surface-container-low border-outline-variant/30 text-on-surface-variant"
-                }`}
+                  }`}
               >
                 {sem}
               </button>
@@ -280,11 +279,10 @@ const Hub: React.FC = () => {
                 <button
                   key={sub}
                   onClick={() => handleSubjectChange(sub)}
-                  className={`px-5 py-2.5 rounded-2xl text-xs font-bold whitespace-nowrap transition-all border ${
-                    subject === sub
+                  className={`px-5 py-2.5 rounded-2xl text-xs font-bold whitespace-nowrap transition-all border ${subject === sub
                       ? "bg-on-surface border-on-surface text-background shadow-md"
                       : "bg-surface-container-low border-outline-variant/30 text-on-surface-variant"
-                  }`}
+                    }`}
                 >
                   {sub}
                 </button>
@@ -298,11 +296,10 @@ const Hub: React.FC = () => {
                 <button
                   key={t}
                   onClick={() => handleTypeChange(t)}
-                  className={`flex items-center gap-2 px-5 py-2.5 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all border ${
-                    type === t
+                  className={`flex items-center gap-2 px-5 py-2.5 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all border ${type === t
                       ? "bg-primary/10 border-primary/30 text-primary"
                       : "bg-transparent border-outline-variant/30 text-text-muted"
-                  }`}
+                    }`}
                 >
                   <span className="material-symbols-outlined text-[16px]">
                     {t.toLowerCase().includes("pdf")
@@ -346,11 +343,10 @@ const Hub: React.FC = () => {
                   <button
                     key={sem}
                     onClick={() => handleSemesterChange(sem)}
-                    className={`px-6 py-2.5 rounded-xl text-xs font-bold transition-all ${
-                      semester === sem
+                    className={`px-6 py-2.5 rounded-xl text-xs font-bold transition-all ${semester === sem
                         ? "bg-primary text-on-primary shadow-lg shadow-primary/20 scale-105"
                         : "bg-surface-container-highest/40 text-on-surface hover:bg-surface-container-highest/80"
-                    }`}
+                      }`}
                   >
                     {sem}
                   </button>
@@ -377,11 +373,11 @@ const Hub: React.FC = () => {
                   <button
                     key={sub}
                     onClick={() => handleSubjectChange(sub)}
-                    className={`px-5 py-2.5 rounded-xl text-xs font-medium transition-all ${
-                      subject === sub
+                    className={`px-5 py-3 md:py-2.5 rounded-xl text-sm md:text-xs font-medium transition-all max-w-[240px] truncate ${subject === sub
                         ? "bg-primary/10 border border-primary/30 text-primary font-bold"
                         : "text-text-muted hover:text-on-surface hover:bg-surface-container-highest/40"
-                    }`}
+                      }`}
+                    title={sub}
                   >
                     {sub}
                   </button>
@@ -408,11 +404,10 @@ const Hub: React.FC = () => {
                   <button
                     key={t}
                     onClick={() => handleTypeChange(t)}
-                    className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold uppercase tracking-widest transition-all border ${
-                      type === t
+                    className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold uppercase tracking-widest transition-all border ${type === t
                         ? "bg-on-surface text-background border-on-surface shadow-md"
                         : "bg-surface-container-highest/40 border-transparent text-text-muted hover:border-border/50 hover:text-on-surface"
-                    }`}
+                      }`}
                   >
                     <span className="material-symbols-outlined text-[18px]">
                       {t.toLowerCase().includes("pdf")
@@ -434,7 +429,7 @@ const Hub: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_2fr] gap-6 md:gap-8 min-w-0">
         {/* File List */}
         <section
-          className={`bg-surface-container-lowest rounded-[2rem] border border-outline-variant/30 shadow-sm p-6 flex flex-col gap-6 sticky top-24 lg:max-h-[calc(100vh-8rem)] min-h-0 min-w-0 animate-fade-in-up delay-200 ${selectedFile ? "hidden lg:flex" : "flex"}`}
+          className={`bg-surface-container-lowest rounded-[2rem] border border-outline-variant/30 shadow-card p-6 flex flex-col gap-6 sticky top-24 lg:max-h-[calc(100vh-8rem)] min-h-0 min-w-0 animate-fade-in-up delay-200 ${selectedFile ? "hidden lg:flex" : "flex"}`}
         >
           <div className="flex items-center justify-between">
             <h2 className="font-headline font-bold text-lg text-on-surface">
@@ -462,11 +457,10 @@ const Hub: React.FC = () => {
                 <button
                   key={file.name}
                   onClick={() => handleFileSelect(file)}
-                  className={`group flex items-center gap-4 p-4 rounded-2xl text-left transition-all border ${
-                    selectedFile?.name === file.name
+                  className={`group flex items-center gap-4 p-4 rounded-2xl text-left transition-all border ${selectedFile?.name === file.name
                       ? "bg-primary/5 border-primary/20 text-primary shadow-sm"
                       : "bg-transparent border-transparent hover:bg-surface-container-low hover:border-outline-variant/30 text-on-surface"
-                  }`}
+                    }`}
                 >
                   <div
                     className={`p-2.5 rounded-xl transition-colors ${selectedFile?.name === file.name ? "bg-primary text-on-primary" : "bg-surface-container-high text-on-surface-variant group-hover:bg-primary/10 group-hover:text-primary"}`}
@@ -498,8 +492,8 @@ const Hub: React.FC = () => {
         >
           <section
             className={`
-              bg-surface-container-lowest lg:rounded-[2rem] lg:border border-outline-variant/30 shadow-2xl lg:shadow-sm flex flex-col gap-0 lg:gap-6 relative lg:sticky lg:top-24 overflow-hidden min-w-0 z-40 h-full lg:h-auto
-              ${selectedFile ? "fixed inset-0 lg:static lg:p-8" : "p-0 lg:p-8 lg:min-h-[600px] flex items-center justify-center"}
+              bg-surface-container-lowest lg:rounded-[2rem] lg:border border-outline-variant/30 shadow-card-lg lg:shadow-card-lg flex flex-col gap-0 lg:gap-3 relative min-w-0 z-40
+              ${selectedFile ? "fixed inset-0 lg:static lg:px-6 lg:pt-5 lg:pb-2 animate-slide-up lg:animate-none" : "p-0 lg:p-8 lg:min-h-[600px] flex items-center justify-center"}
             `}
           >
             {selectedFile ? (
@@ -508,7 +502,7 @@ const Hub: React.FC = () => {
                 <div className="flex items-center gap-4 p-4 lg:p-0 bg-surface-container-lowest lg:bg-transparent border-b lg:border-0 border-outline-variant/20 shrink-0">
                   <button
                     onClick={() => setSelectedFile(null)}
-                    className="lg:hidden p-2 rounded-xl bg-surface-container-high hover:bg-surface-container-highest transition-colors"
+                    className="lg:hidden p-2.5 rounded-xl bg-surface-container-high hover:bg-surface-container-highest transition-colors shadow-sm"
                   >
                     <span className="material-symbols-outlined text-[24px] block">
                       arrow_back
@@ -518,31 +512,28 @@ const Hub: React.FC = () => {
                     <div className="lg:hidden flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60">
                       Material Preview
                     </div>
-                    <h3 className="text-lg lg:text-2xl font-black font-headline text-on-surface truncate leading-tight">
+                    <h3 className="text-lg lg:text-xl font-black font-headline text-on-surface truncate leading-tight">
                       {formatFileName(selectedFile.name)}
                     </h3>
                   </div>
                 </div>
 
                 {/* Desktop Metadata */}
-                <div className="hidden lg:flex flex-col gap-2 shrink-0">
+                <div className="hidden lg:flex items-center justify-between gap-2 shrink-0">
                   <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-primary font-label">
-                    <span className="material-symbols-outlined text-[16px]">
-                      visibility
-                    </span>
+                    <span className="material-symbols-outlined text-[16px]">visibility</span>
                     Preview Surface
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="px-3 py-1 rounded-lg text-[10px] font-black bg-surface-container text-on-surface-variant uppercase tracking-wider">
+                    <span className="px-2 py-0.5 rounded-md text-[9px] font-black bg-surface-container text-on-surface-variant uppercase tracking-wider">
                       {semester}
                     </span>
-                    <span className="px-3 py-1 rounded-lg text-[10px] font-black bg-surface-container text-on-surface-variant uppercase tracking-wider">
+                    <span className="px-2 py-0.5 rounded-md text-[9px] font-black bg-surface-container text-on-surface-variant uppercase tracking-wider">
                       {subject}
                     </span>
                   </div>
                 </div>
 
-                <div className="hidden lg:block h-px bg-outline-variant/30 w-full shrink-0"></div>
 
                 {/* Preview Frame */}
                 <div className="flex-1 lg:bg-surface-container-low lg:rounded-2xl lg:border border-outline-variant/20 overflow-hidden relative min-h-0 flex flex-col bg-white">
@@ -558,7 +549,7 @@ const Hub: React.FC = () => {
                   )}
 
                   {preview.kind === "doc" && (
-                    <div className="w-full relative bg-white overflow-hidden flex-1">
+                    <div className="w-full h-full flex flex-col relative bg-white overflow-hidden flex-1 min-h-0">
                       <Suspense
                         fallback={
                           <div className="flex flex-col items-center justify-center h-full gap-4">
@@ -651,7 +642,7 @@ const Hub: React.FC = () => {
               </>
             ) : (
               <div className="hidden lg:flex flex-col items-center text-center gap-6 max-w-md animate-fade-in-up">
-                <div className="w-24 h-24 bg-surface-container-high rounded-3xl flex items-center justify-center shadow-inner">
+                <div className="w-24 h-24 bg-primary/5 border border-primary/10 rounded-3xl flex items-center justify-center shadow-inner">
                   <span className="material-symbols-outlined text-5xl text-primary/40">
                     quick_reference_all
                   </span>

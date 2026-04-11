@@ -5,6 +5,7 @@
 import { CHUNKS_TTL, retrieveCacheKey } from '../cache';
 import { checkRateLimit } from '../rateLimit';
 import { Env, RetrieveRequestBody, RetrieveResponse } from '../types';
+import { jsonResponse, errorResponse } from '../utils';
 
 export async function handleRetrieve(request: Request, env: Env): Promise<Response> {
   const ip = request.headers.get('CF-Connecting-IP') ?? 'unknown';
@@ -58,16 +59,4 @@ export async function handleRetrieve(request: Request, env: Env): Promise<Respon
   return jsonResponse({ ...hfData, cached: false });
 }
 
-function jsonResponse(data: unknown, status = 200): Response {
-  return new Response(JSON.stringify(data), {
-    status,
-    headers: {
-      'Content-Type': 'application/json',
-      'X-Plexi-Source': 'worker',
-    },
-  });
-}
 
-function errorResponse(status: number, message: string): Response {
-  return jsonResponse({ error: message }, status);
-}

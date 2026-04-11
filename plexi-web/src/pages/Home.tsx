@@ -42,7 +42,7 @@ const Home: React.FC = () => {
           </Link>
           <Link
             to="/hub"
-            className="px-10 py-5 rounded-full text-lg font-bold text-on-surface hover:bg-surface-container-high transition-all border border-border/50"
+            className="px-10 py-5 rounded-full text-lg font-bold text-on-surface bg-surface-container-high hover:bg-surface-container-highest transition-all border border-border/50 shadow-card"
           >
             Explore Materials
           </Link>
@@ -58,19 +58,31 @@ const Home: React.FC = () => {
               Parul University
             </span>
             <span className="text-xl font-black font-headline tracking-tighter">
-              Computer Science
+              B.Tech CSE
             </span>
             <span className="text-xl font-black font-headline tracking-tighter">
-              Engineering
+              B.Tech IT
             </span>
           </div>
         </div>
       </section>
 
       {/* The "No More Boxes" Feature Section */}
-      <section className="px-6 max-w-7xl mx-auto w-full animate-fade-in-up delay-700">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-16 md:gap-12">
+      <section className="px-6 py-20 max-w-7xl mx-auto w-full animate-fade-in-up delay-700 bg-surface-container-lowest/50 rounded-[3rem] border border-border/20 shadow-card">
+        <div className="text-center mb-16 px-4">
+          <span className="text-[10px] font-bold uppercase tracking-[0.3em] text-primary mb-4 block">
+            Why Plexi
+          </span>
+          <h2 className="text-3xl md:text-4xl font-black font-headline tracking-tighter text-on-surface max-w-2xl mx-auto">
+            Built for how you <span className="text-primary">actually</span> study.
+          </h2>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-16 md:gap-12 px-6 md:px-12">
           <div className="flex flex-col gap-6 group">
+            <div className="flex items-center gap-4 mb-2">
+              <span className="text-6xl font-black text-primary/10 font-headline leading-none">01</span>
+              <div className="h-px flex-1 bg-border/50"></div>
+            </div>
             <div className="w-14 h-14 rounded-2xl bg-primary/10 text-primary flex items-center justify-center shadow-inner group-hover:scale-110 transition-transform">
               <span className="material-symbols-outlined text-3xl">target</span>
             </div>
@@ -83,6 +95,10 @@ const Home: React.FC = () => {
             </p>
           </div>
           <div className="flex flex-col gap-6 group">
+            <div className="flex items-center gap-4 mb-2">
+              <span className="text-6xl font-black text-primary/10 font-headline leading-none">02</span>
+              <div className="h-px flex-1 bg-border/50"></div>
+            </div>
             <div className="w-14 h-14 rounded-2xl bg-primary/10 text-primary flex items-center justify-center shadow-inner group-hover:scale-110 transition-transform">
               <span className="material-symbols-outlined text-3xl">
                 auto_stories
@@ -97,6 +113,10 @@ const Home: React.FC = () => {
             </p>
           </div>
           <div className="flex flex-col gap-6 group">
+            <div className="flex items-center gap-4 mb-2">
+              <span className="text-6xl font-black text-primary/10 font-headline leading-none">03</span>
+              <div className="h-px flex-1 bg-border/50"></div>
+            </div>
             <div className="w-14 h-14 rounded-2xl bg-primary/10 text-primary flex items-center justify-center shadow-inner group-hover:scale-110 transition-transform">
               <span className="material-symbols-outlined text-3xl">bolt</span>
             </div>
@@ -158,7 +178,7 @@ const Home: React.FC = () => {
             href="https://ko-fi.com/post/Setting-Up-Plexi-MCP-for-Claude-and-ChatGPT-X8X11X3IKZ"
             target="_blank"
             rel="noopener noreferrer"
-            className="group flex flex-col gap-6 p-8 rounded-3xl bg-surface-container-lowest border border-border/30 hover:border-primary/50 transition-all hover:shadow-2xl hover:shadow-primary/5 animate-scale-up delay-100"
+            className="group flex flex-col gap-6 p-8 rounded-3xl bg-surface-container-lowest border border-border/30 hover:border-primary/50 transition-all hover:shadow-card hover:shadow-primary/5 animate-scale-up delay-100"
           >
             <div className="text-primary font-bold text-xs uppercase tracking-[0.2em]">
               Article
@@ -174,7 +194,7 @@ const Home: React.FC = () => {
             href="https://lazyhuman.notion.site/Setting-Up-Plexi-MCP-for-Claude-and-ChatGPT-336e3502f0918090b69fdbed148e8e55"
             target="_blank"
             rel="noopener noreferrer"
-            className="group flex flex-col gap-6 p-8 rounded-3xl bg-surface-container-lowest border border-border/30 hover:border-primary/50 transition-all hover:shadow-2xl hover:shadow-primary/5 animate-scale-up delay-200"
+            className="group flex flex-col gap-6 p-8 rounded-3xl bg-surface-container-lowest border border-border/30 hover:border-primary/50 transition-all hover:shadow-card hover:shadow-primary/5 animate-scale-up delay-200"
           >
             <div className="text-primary font-bold text-xs uppercase tracking-[0.2em]">
               Guide
@@ -190,7 +210,7 @@ const Home: React.FC = () => {
             href="https://lazyhuman.notion.site/How-to-use-Plexi-Assistant-339e3502f091806b98e8d850706ebd47"
             target="_blank"
             rel="noopener noreferrer"
-            className="group flex flex-col gap-6 p-8 rounded-3xl bg-surface-container-lowest border border-border/30 hover:border-primary/50 transition-all hover:shadow-2xl hover:shadow-primary/5 animate-scale-up delay-300"
+            className="group flex flex-col gap-6 p-8 rounded-3xl bg-surface-container-lowest border border-border/30 hover:border-primary/50 transition-all hover:shadow-card hover:shadow-primary/5 animate-scale-up delay-300"
           >
             <div className="text-primary font-bold text-xs uppercase tracking-[0.2em]">
               Tutorial

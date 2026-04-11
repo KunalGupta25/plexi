@@ -3,11 +3,12 @@ import { useManifest } from "../hooks/useManifest";
 import { useSettings, PROVIDERS } from "../hooks/useSettings";
 import { api, Message } from "../api/client";
 import { marked } from "marked";
+import DOMPurify from "dompurify";
 import StudyScopeSelector from "../components/StudyScopeSelector";
 import { SEO } from "../components/SEO";
 
 const renderMarkdown = (content: string) =>
-  marked.parse(content.replace(/</g, "&lt;").replace(/>/g, "&gt;")) as string;
+  DOMPurify.sanitize(marked.parse(content) as string);
 
 const SCOPE_STORAGE_KEY = "plexi_scope";
 const PROMPT_SUGGESTIONS = [
@@ -107,21 +108,28 @@ const Assistant: React.FC = () => {
 
   const buildSystemPrompt = (
     context: string,
-  ) => `You are Plexi, a specialized AI study assistant for computer science students at Parul University. Your goal is to provide accurate, grounded answers based on the provided study materials.
+  ) => `You are Plexi, a friendly and knowledgeable AI study assistant for computer science students at Parul University. You help students understand their course materials for **${subject}** (${semester}).
 
-### STRICT RULES:
+### BEHAVIOR RULES:
+1. **Greetings & Small Talk**: If the student greets you (e.g., "hi", "hello", "hey"), respond warmly and briefly. Introduce yourself and offer to help with their ${subject} studies. Keep it short and natural.
+2. **Vague or Ambiguous Questions**: If the student asks something unclear (e.g., "explain the core concepts", "tell me everything", "what's important"), don't guess — ask a clarifying follow-up question. For example: "Sure! Which specific topic in ${subject} would you like me to explain? For instance, I can cover [list 2-3 key topics from the context]."
+3. **Specific Study Questions**: Answer thoroughly using the study materials below.
+
+### ANSWER RULES:
 1. **Groundedness**: Your answer MUST be based on the "STUDY MATERIALS CONTEXT" below. Do not use outside knowledge if the information is available in the context.
-2. **Context Absence**: If the "STUDY MATERIALS CONTEXT" does not contain the answer, you must start your response with: "I couldn't find this specific information in your study materials. Based on general knowledge..."
-3. **Citation**: Whenever you use information from the context, explicitly mention the source file name (e.g., "From [filename]: ...").
+2. **Context Absence**: If the "STUDY MATERIALS CONTEXT" does not contain the answer, you must clearly state: "I couldn't find this specific information in your ${subject} study materials. Based on general knowledge..." and then answer.
+3. **Citation**: Whenever you use information from the context, mention the source file (e.g., "From [filename]: ...").
 4. **No Hallucinations**: Do not invent facts. If the context is ambiguous, state that clearly.
-5. **Tone**: Be professional, helpful, and academic. Use Markdown for structured output (bullet points, bold text, code blocks).
+5. **Tone**: Be professional but approachable. Use Markdown for structured output (bullet points, bold text, code blocks, tables).
+6. **Subject Awareness**: You are currently helping with **${subject}** from **${semester}**. Frame your answers in this context.
 
 --- STUDY MATERIALS CONTEXT ---
 ${context || "No specific study materials were found for this query."}
 
 ---
-USER QUESTION:
-Please answer the student's question using the rules above. Prioritize the provided context above all else.`;
+Respond to the student's message using the rules above.`;
+
+  const isStreaming = useRef(false);
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -142,6 +150,7 @@ Please answer the student's question using the rules above. Prioritize the provi
     setCacheNotice(null);
 
     try {
+      // Step 1: Retrieve context from RAG
       const retrieveResult = await api.retrieve({
         query: userMsg,
         semester,
@@ -154,29 +163,64 @@ Please answer the student's question using the rules above. Prioritize the provi
         ...nextMessages.slice(-10),
       ];
       const cacheKey = `${semester}::${subject}`;
-      const chatResult = await api.chat({
-        endpoint: activeProvider.baseUrl,
-        apiKey: apiKey.trim(),
-        model: model.trim(),
-        messages: chatMessages,
-        cacheKey,
-      });
+
+      // Step 2: Add empty assistant message placeholder
+      const streamingMessages = [
+        ...nextMessages,
+        { role: "assistant" as const, content: "" },
+      ];
+      setMessages(streamingMessages);
+      isStreaming.current = true;
+
+      // Step 3: Stream tokens
+      const { cached: answerCached } = await api.chatStream(
+        {
+          endpoint: activeProvider.baseUrl,
+          apiKey: apiKey.trim(),
+          model: model.trim(),
+          messages: chatMessages,
+          cacheKey,
+        },
+        (token) => {
+          // Append each token to the last (assistant) message
+          setMessages((prev) => {
+            const updated = [...prev];
+            const last = updated[updated.length - 1];
+            if (last && last.role === "assistant") {
+              updated[updated.length - 1] = {
+                ...last,
+                content: last.content + token,
+              };
+            }
+            return updated;
+          });
+        },
+      );
+
+      isStreaming.current = false;
+
+      // Step 4: Set cache notice
       const notices: string[] = [];
       if (retrieveResult.cached) notices.push("materials");
-      if (chatResult.cached) notices.push("answer");
+      if (answerCached) notices.push("answer");
       setCacheNotice(
         notices.length ? `Served from cache: ${notices.join(" + ")}` : null,
       );
-      setMessages([
-        ...nextMessages,
-        { role: "assistant", content: chatResult.answer },
-      ]);
     } catch (sendError) {
+      isStreaming.current = false;
       setError(
         sendError instanceof Error
           ? sendError.message
           : "An unexpected error occurred.",
       );
+      // Remove the empty placeholder message on error
+      setMessages((prev) => {
+        const last = prev[prev.length - 1];
+        if (last?.role === "assistant" && !last.content) {
+          return prev.slice(0, -1);
+        }
+        return prev;
+      });
     } finally {
       setChatLoading(false);
     }
@@ -348,8 +392,8 @@ Please answer the student's question using the rules above. Prioritize the provi
                 ))}
               </div>
 
-              <div className="w-full bg-surface-container-low p-5 rounded-2xl border border-outline-variant/20 text-left flex flex-col gap-2 shadow-sm">
-                <div className="flex items-center gap-2 text-primary font-bold font-headline mb-1">
+              <div className="w-full bg-surface-container-low/50 p-4 rounded-xl border border-dashed border-outline-variant/30 text-left flex flex-col gap-2">
+                <div className="flex items-center gap-2 text-on-surface-variant font-bold font-headline text-sm mb-1">
                   <span className="material-symbols-outlined">extension</span>
                   Want to use Plexi with ChatGPT or Claude?
                 </div>
@@ -363,10 +407,10 @@ Please answer the student's question using the rules above. Prioritize the provi
                     href="https://ko-fi.com/post/Setting-Up-Plexi-MCP-for-Claude-and-ChatGPT-X8X11X3IKZ"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-xs font-bold text-primary hover:underline flex items-center gap-1"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-bold text-primary bg-primary/5 hover:bg-primary/10 border border-primary/20 transition-colors"
                   >
-                    Read the Setup Guide
-                    <span className="material-symbols-outlined text-[14px]">
+                    Setup Guide
+                    <span className="material-symbols-outlined text-[12px]">
                       open_in_new
                     </span>
                   </a>
@@ -378,11 +422,10 @@ Please answer the student's question using the rules above. Prioritize the provi
               {messages.map((message, index) => (
                 <div
                   key={index}
-                  className={`flex flex-col max-w-[85%] md:max-w-[75%] ${
-                    message.role === "user"
+                  className={`flex flex-col max-w-[85%] md:max-w-[75%] ${message.role === "user"
                       ? "self-end items-end"
                       : "self-start items-start"
-                  }`}
+                    }`}
                 >
                   <div
                     className={`flex items-center gap-2 mb-1.5 px-1 ${message.role === "user" ? "flex-row-reverse" : ""}`}
@@ -395,22 +438,26 @@ Please answer the student's question using the rules above. Prioritize the provi
                     </span>
                   </div>
                   <div
-                    className={`p-5 rounded-2xl shadow-sm text-[15px] leading-relaxed break-words ${
-                      message.role === "user"
+                    className={`p-5 rounded-2xl shadow-sm text-[15px] leading-relaxed break-words ${message.role === "user"
                         ? "bg-primary text-on-primary rounded-tr-sm"
                         : "bg-surface-container-low text-on-surface border border-outline-variant/20 rounded-tl-sm"
-                    }`}
+                      }`}
                   >
                     <div
-                      className={`prose prose-sm max-w-none prose-p:my-2 prose-a:text-primary-container prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded ${
-                        message.role === "user"
+                      className={`prose prose-sm max-w-none prose-p:my-2 prose-a:text-primary-container prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded ${message.role === "user"
                           ? "prose-p:text-on-primary prose-headings:text-on-primary prose-strong:text-on-primary prose-li:text-on-primary"
                           : "dark:prose-invert prose-code:bg-surface-container-highest prose-pre:bg-surface-container-highest prose-pre:text-on-surface"
-                      }`}
+                        }`}
                       dangerouslySetInnerHTML={{
                         __html: renderMarkdown(message.content),
                       }}
                     />
+                    {/* Streaming cursor */}
+                    {message.role === "assistant" &&
+                      index === messages.length - 1 &&
+                      chatLoading && (
+                        <span className="inline-block w-2 h-4 ml-1 bg-primary rounded-sm animate-pulse" />
+                      )}
 
                     {/* Render Context References for the last AI message */}
                     {message.role === "assistant" &&
@@ -450,7 +497,7 @@ Please answer the student's question using the rules above. Prioritize the provi
             </>
           )}
 
-          {chatLoading && (
+          {chatLoading && !isStreaming.current && (
             <div className="self-start flex flex-col items-start max-w-[85%]">
               <div className="flex items-center gap-2 mb-1.5 px-1">
                 <span className="material-symbols-outlined text-[14px] text-outline">
@@ -465,7 +512,7 @@ Please answer the student's question using the rules above. Prioritize the provi
                   progress_activity
                 </span>
                 <span className="text-sm font-medium text-secondary">
-                  Analyzing course materials...
+                  Scanning study materials...
                 </span>
               </div>
             </div>
@@ -485,7 +532,7 @@ Please answer the student's question using the rules above. Prioritize the provi
         <div className="w-full p-4 md:p-6 bg-surface-container-lowest border-t border-outline-variant/20 z-10 shrink-0 print:hidden">
           <form
             onSubmit={handleSendMessage}
-            className="max-w-4xl mx-auto relative flex items-center shadow-sm rounded-full bg-surface-container-high border border-outline-variant/30 focus-within:border-primary/40 focus-within:ring-4 focus-within:ring-primary/10 transition-all"
+            className="max-w-4xl mx-auto relative flex items-center shadow-card rounded-full bg-surface-container-lowest border-2 border-outline-variant/40 focus-within:border-primary/40 focus-within:ring-4 focus-within:ring-primary/10 transition-all"
           >
             <input
               type="text"
@@ -510,7 +557,7 @@ Please answer the student's question using the rules above. Prioritize the provi
               disabled={
                 !bootstrapped || !input.trim() || chatLoading || !subject
               }
-              className="absolute right-2 md:right-2 w-10 h-10 md:w-12 md:h-12 bg-transparent text-on-surface-variant hover:text-on-surface rounded-full flex items-center justify-center disabled:opacity-50 transition-colors"
+              className="absolute right-2 md:right-2 w-10 h-10 md:w-12 md:h-12 bg-transparent text-primary hover:bg-primary/10 active:scale-90 rounded-full flex items-center justify-center disabled:opacity-50 transition-all p-2"
             >
               <span className="material-symbols-outlined text-[20px] md:text-[24px]">
                 send
@@ -522,9 +569,8 @@ Please answer the student's question using the rules above. Prioritize the provi
 
       {/* Sidebar (Settings Info) */}
       <div
-        className={`${
-          showSidebar ? "flex" : "hidden"
-        } lg:flex w-full absolute inset-0 bg-surface-container-lowest z-20 lg:relative lg:w-[320px] lg:bg-surface-container-low border-l border-outline-variant/30 flex-col overflow-y-auto no-scrollbar transition-all print:hidden`}
+        className={`${showSidebar ? "flex" : "hidden"
+          } lg:flex w-full absolute inset-0 bg-surface-container-lowest z-20 lg:relative lg:w-[320px] lg:bg-surface-container-low border-l border-outline-variant/30 flex-col overflow-y-auto no-scrollbar transition-all print:hidden`}
       >
         <div className="p-6 flex flex-col gap-10">
           <div className="flex items-center justify-between lg:hidden">

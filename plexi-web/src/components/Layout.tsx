@@ -160,21 +160,23 @@ const Layout: React.FC = () => {
         <div className="flex items-center gap-2 shrink-0">
           <button
             onClick={toggleTheme}
-            className="p-2 text-on-surface-variant hover:bg-surface-variant rounded-full transition-colors flex items-center justify-center"
+            className="p-2 text-on-surface-variant hover:bg-surface-variant rounded-full transition-colors flex flex-col items-center justify-center"
             aria-label="Toggle Theme"
           >
             <span className="material-symbols-outlined text-[20px]">
               {theme === "dark" ? "light_mode" : "dark_mode"}
             </span>
+            <span className="text-[9px] font-bold mt-1">Theme</span>
           </button>
           <button
             onClick={() => setIsSettingsOpen(true)}
-            className="p-2 text-on-surface-variant hover:bg-surface-variant rounded-full transition-colors flex items-center justify-center"
+            className="p-2 text-on-surface-variant hover:bg-surface-variant rounded-full transition-colors flex flex-col items-center justify-center"
             aria-label="Global Settings"
           >
             <span className="material-symbols-outlined text-[20px]">
               settings
             </span>
+            <span className="text-[9px] font-bold mt-1">Settings</span>
           </button>
         </div>
       </nav>
@@ -240,7 +242,7 @@ const Layout: React.FC = () => {
             backdropFilter: "blur(4px)",
           }}
         >
-          <div className="bg-surface-container-lowest rounded-xl p-6 md:p-10 shadow-2xl overflow-hidden relative max-w-2xl w-full">
+          <div className="bg-surface-container-lowest rounded-3xl shadow-card-lg border border-outline-variant/20 p-6 md:p-10 overflow-hidden relative max-w-2xl w-full">
             <button
               onClick={() => setIsSettingsOpen(false)}
               className="absolute top-6 right-6 p-2 rounded-full text-outline hover:bg-surface-container-highest transition-colors"

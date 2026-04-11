@@ -4,6 +4,7 @@
 // formats inline instead of navigating through redirect chains.
 
 import { Env } from "../types";
+import { errorResponse } from "../utils";
 
 const ALLOWED_HOSTS = [
   "raw.githubusercontent.com",
@@ -124,9 +125,4 @@ export async function handleFile(
   }
 }
 
-function errorResponse(status: number, message: string): Response {
-  return new Response(JSON.stringify({ error: message }), {
-    status,
-    headers: { "Content-Type": "application/json" },
-  });
-}
+
