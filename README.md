@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="https://raw.githubusercontent.com/KunalGupta25/plexi/main/plexi-web/public/Plexi_logo.png" alt="Plexi Logo" width="200"/>
+  <img src="https://github.com/KunalGupta25/plexi/blob/main/plexi-web/public/logo.png" alt="Plexi Logo" width="200"/>
 
   # Plexi
 
@@ -10,7 +10,7 @@
   [![Support](https://img.shields.io/badge/Support-Ko--fi-FF5E5B.svg?style=flat&logo=ko-fi)](https://ko-fi.com/lazyhuman)
   <br>
 
-  [Download Desktop App](https://github.com/KunalGupta25/plexi/releases/latest) • [Use Web App](https://plexi.cosmetah) • [Add Study Materials](#how-to-contribute-study-materials)
+  [Download App](https://github.com/KunalGupta25/plexi/releases/latest) • [Use Web App](https://plexi.cosmeta.tech) • [Add Study Materials](#how-to-contribute-study-materials)
 </div>
 
 ---
@@ -33,15 +33,14 @@ Whether you're reviewing a presentation, reading lecture notes, or stuck on a sp
 
 ## 📥 Download & Installation
 
-Plexi is available as a web app or as a standalone desktop application for Windows. *(Android companion app coming soon!)*
+Plexi is available as a web app or as a standalone application for Windows and Android.
 
-### Windows 
-Get the ultimate offline-capable experience for your PC:
-👉 **[Download Plexi for Windows (Latest Release)](https://github.com/KunalGupta25/plexi/releases/latest)**
+### Download
+👉 **[Download Plexi for Your Device (Latest Release)](https://github.com/KunalGupta25/plexi/releases/latest)**
 
 ### Web App
 Want to study on the go without installing anything? Access Plexi instantly from any device:
-👉 **[Launch Web App](https://plexi.cosmetah)**
+👉 **[Launch Web App](https://plexi.cosmeta.tech)**
 
 ---
 
@@ -49,10 +48,13 @@ Want to study on the go without installing anything? Access Plexi instantly from
 
 1.  **Open the App & Select Your Scope:** Tell Plexi what you are studying right now (e.g., *Semester 6 > Compiler Design*).
 2.  **View Materials:** Jump into the "Materials" tab to read notes and review slides.
-3.  **Configure Your AI (One-time setup):** Go to Settings and paste an API key from your favorite AI provider. Don't want to pay? We recommend using **OpenRouter** and selecting their free models! Check out our full guide below:
+3.  **Configure Your AI (One-time setup):** Go to Settings and paste an API key from your favorite AI provider. Don't want to pay? We recommend using **Gemini**! Check out our full guide below:
     👉 **[Step-by-Step Setup Guide & API Tutorial](https://lazyhuman.notion.site/How-to-use-Plexi-Assistant-339e3502f091806b98e8d850706ebd47)**
 4.  **Start Chatting:** Open the "Chat" tab and ask away! Try prompts like *"Explain the core concepts of this subject"* or *"Summarize the last file I was looking at."*
-
+5.  **Use Plexi inside ChatGPT:** You can also use Plexi inside ChatGPT by Searching for "Plexi" in the ChatGPT Store or by using the Following Link:
+    👉 **[Use Plexi inside ChatGPT](https://chatgpt.com/g/g-69caa671910481919ce71d19952e34e5-plexi)** 
+6. **Use Plexi with MCP:** You can also use Plexi with MCP in your Favorite AI Assistant Like Claude, Cursor, etc. by using the Following Link:
+    👉 **[Use Plexi with MCP](https://lazyhuman.notion.site/Setting-Up-Plexi-MCP-for-Claude-and-ChatGPT-336e3502f0918090b69fdbed148e8e55)**
 ---
 
 ## 🤝 How to Contribute Study Materials
@@ -63,7 +65,7 @@ All of Plexi's knowledge comes from the open-source material repository. **Here 
 
 1.  Go to the dedicated materials repository: **[kunalgupta25/plexi-materials](https://github.com/KunalGupta25/plexi-materials)**
 2.  Click on the **"Issues"** tab.
-3.  Click **"New Issue"**.
+3.  Click **"New Issue"** and Select Add **📤 Upload Study Material** Template. or Directly use this link to add materials to Create Issue: [Create Issue](https://github.com/KunalGupta25/plexi-materials/issues/new?template=upload-material.yml)  
 4.  Provide details about the missing material (Semester, Subject Name) and attach the files (PDFs/PPTs), or provide a secure academic drive link.
 5.  Our maintainers will review the content, convert it, and index it into Plexi's live brain!
 
