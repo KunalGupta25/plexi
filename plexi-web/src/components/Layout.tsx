@@ -381,11 +381,27 @@ const Layout: React.FC = () => {
                   </span>{" "}
                   Save Settings
                 </button>
-                <div className="text-xs text-outline flex items-center gap-1">
-                  <span className="material-symbols-outlined text-[16px]">
-                    shield
-                  </span>{" "}
-                  Local-only
+                <div className="flex items-center gap-4">
+                  <a
+                    href="https://lazyhuman.notion.site/How-to-use-Plexi-Assistant-339e3502f091806b98e8d850706ebd47"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-xs font-bold text-primary hover:underline flex items-center gap-1"
+                  >
+                    <span className="material-symbols-outlined text-[16px]">
+                      menu_book
+                    </span>
+                    Setup Guide
+                    <span className="material-symbols-outlined text-[12px]">
+                      open_in_new
+                    </span>
+                  </a>
+                  <div className="text-xs text-outline flex items-center gap-1">
+                    <span className="material-symbols-outlined text-[16px]">
+                      shield
+                    </span>{" "}
+                    Local-only
+                  </div>
                 </div>
               </div>
             </form>

@@ -353,13 +353,24 @@ Respond to the student's message using the rules above.`;
                 Please configure your AI provider and API key in the settings to
                 start chatting with Plexi.
               </p>
-              <button
-                onClick={() => setIsSettingsOpen(true)}
-                className="px-6 py-3 bg-primary text-on-primary rounded-full font-bold shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all flex items-center gap-2"
-              >
-                <span className="material-symbols-outlined">settings</span>
-                Open Settings
-              </button>
+              <div className="flex flex-col sm:flex-row items-center gap-3">
+                <button
+                  onClick={() => setIsSettingsOpen(true)}
+                  className="px-6 py-3 bg-primary text-on-primary rounded-full font-bold shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all flex items-center gap-2"
+                >
+                  <span className="material-symbols-outlined">settings</span>
+                  Open Settings
+                </button>
+                <a
+                  href="https://chatgpt.com/g/g-69caa671910481919ce71d19952e34e5-plexi"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-6 py-3 bg-surface-container-high text-on-surface rounded-full font-bold shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all flex items-center gap-2 border border-outline-variant/30"
+                >
+                  <span className="material-symbols-outlined">smart_toy</span>
+                  Use Plexi in ChatGPT
+                </a>
+              </div>
             </div>
           ) : messages.length === 0 ? (
             <div className="flex-1 flex flex-col items-center justify-center text-center max-w-xl mx-auto opacity-80 mt-12">
