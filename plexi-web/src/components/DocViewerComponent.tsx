@@ -29,6 +29,22 @@ const DocViewerComponent: React.FC<DocViewerComponentProps> = ({ document: docum
   const [activeTool, setActiveTool] = useState<"none" | "marker" | "highlighter">("none");
   const [annotations, setAnnotations] = useState<Record<number, any[]>>({});
 
+  // Search state
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<{ page: number; matchIndex: number }[]>([]);
+  const [currentSearchIndex, setCurrentSearchIndex] = useState(0);
+  const [highlightedTextItems, setHighlightedTextItems] = useState<Map<number, { text: string; transform: number[] }[]>>(new Map());
+  const searchInputRef = useRef<HTMLInputElement>(null);
+
+  // Pinch-to-zoom state
+  const pinchRef = useRef<{
+    initialDistance: number;
+    initialScale: number;
+    centerX: number;
+    centerY: number;
+  } | null>(null);
+
   // Load PDF
   useEffect(() => {
     let cancelled = false;
@@ -98,6 +114,57 @@ const DocViewerComponent: React.FC<DocViewerComponentProps> = ({ document: docum
     return () => observer.disconnect();
   }, [pdfDoc, loading]);
 
+  // Pinch-to-zoom handler on the scroll container
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+
+    const getTouchDistance = (touches: TouchList) => {
+      const dx = touches[0].clientX - touches[1].clientX;
+      const dy = touches[0].clientY - touches[1].clientY;
+      return Math.sqrt(dx * dx + dy * dy);
+    };
+
+    const handleTouchStart = (e: TouchEvent) => {
+      if (e.touches.length === 2 && activeTool === "none") {
+        e.preventDefault();
+        const dist = getTouchDistance(e.touches);
+        pinchRef.current = {
+          initialDistance: dist,
+          initialScale: scale,
+          centerX: (e.touches[0].clientX + e.touches[1].clientX) / 2,
+          centerY: (e.touches[0].clientY + e.touches[1].clientY) / 2,
+        };
+      }
+    };
+
+    const handleTouchMove = (e: TouchEvent) => {
+      if (e.touches.length === 2 && pinchRef.current) {
+        e.preventDefault();
+        const dist = getTouchDistance(e.touches);
+        const ratio = dist / pinchRef.current.initialDistance;
+        const newScale = Math.min(Math.max(pinchRef.current.initialScale * ratio, 0.3), 4);
+        setScale(newScale);
+      }
+    };
+
+    const handleTouchEnd = (e: TouchEvent) => {
+      if (e.touches.length < 2) {
+        pinchRef.current = null;
+      }
+    };
+
+    el.addEventListener("touchstart", handleTouchStart, { passive: false });
+    el.addEventListener("touchmove", handleTouchMove, { passive: false });
+    el.addEventListener("touchend", handleTouchEnd);
+
+    return () => {
+      el.removeEventListener("touchstart", handleTouchStart);
+      el.removeEventListener("touchmove", handleTouchMove);
+      el.removeEventListener("touchend", handleTouchEnd);
+    };
+  }, [activeTool, scale]);
+
   const changePage = (offset: number) => {
     if (!pdfDoc) return;
     const next = Math.min(Math.max(pageNum + offset, 1), pdfDoc.numPages);
@@ -123,8 +190,89 @@ const DocViewerComponent: React.FC<DocViewerComponentProps> = ({ document: docum
     else pageRefs.current.delete(num);
   }, []);
 
+  // ─── Search logic ───
+  const performSearch = useCallback(async () => {
+    if (!pdfDoc || !searchQuery.trim()) {
+      setSearchResults([]);
+      setHighlightedTextItems(new Map());
+      setCurrentSearchIndex(0);
+      return;
+    }
+
+    const query = searchQuery.trim().toLowerCase();
+    const results: { page: number; matchIndex: number }[] = [];
+    const textItemsMap = new Map<number, { text: string; transform: number[] }[]>();
+
+    for (let p = 1; p <= pdfDoc.numPages; p++) {
+      const page = await pdfDoc.getPage(p);
+      const textContent = await page.getTextContent();
+      const items: { text: string; transform: number[] }[] = [];
+      let matchIndex = 0;
+
+      for (const item of textContent.items) {
+        if ("str" in item) {
+          const str = item.str;
+          items.push({ text: str, transform: (item as any).transform || [] });
+          if (str.toLowerCase().includes(query)) {
+            results.push({ page: p, matchIndex });
+            matchIndex++;
+          }
+        }
+      }
+      if (matchIndex > 0) {
+        textItemsMap.set(p, items);
+      }
+    }
+
+    setSearchResults(results);
+    setHighlightedTextItems(textItemsMap);
+    setCurrentSearchIndex(0);
+
+    // Navigate to first result
+    if (results.length > 0) {
+      navigateToSearchResult(results[0]);
+    }
+  }, [pdfDoc, searchQuery]);
+
+  const navigateToSearchResult = (result: { page: number; matchIndex: number }) => {
+    const el = pageRefs.current.get(result.page);
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth", block: "center" });
+      setPageNum(result.page);
+    }
+  };
+
+  const nextSearchResult = () => {
+    if (searchResults.length === 0) return;
+    const next = (currentSearchIndex + 1) % searchResults.length;
+    setCurrentSearchIndex(next);
+    navigateToSearchResult(searchResults[next]);
+  };
+
+  const prevSearchResult = () => {
+    if (searchResults.length === 0) return;
+    const prev = (currentSearchIndex - 1 + searchResults.length) % searchResults.length;
+    setCurrentSearchIndex(prev);
+    navigateToSearchResult(searchResults[prev]);
+  };
+
+  const closeSearch = () => {
+    setSearchOpen(false);
+    setSearchQuery("");
+    setSearchResults([]);
+    setHighlightedTextItems(new Map());
+    setCurrentSearchIndex(0);
+  };
+
+  // Focus search input when opened
+  useEffect(() => {
+    if (searchOpen && searchInputRef.current) {
+      searchInputRef.current.focus();
+    }
+  }, [searchOpen]);
+
   return (
-    <div ref={scrollRef} className="w-full bg-surface-container-low relative">
+    <div ref={scrollRef} className="w-full bg-surface-container-low relative overflow-auto touch-pan-x touch-pan-y" style={{ WebkitOverflowScrolling: "touch" }}>
       {/* PDF pages render inline — container grows to match content */}
       {loading && (
         <div className="flex flex-col items-center justify-center min-h-[300px] gap-4">
@@ -152,9 +300,71 @@ const DocViewerComponent: React.FC<DocViewerComponentProps> = ({ document: docum
               activeTool={activeTool}
               annotations={annotations[i + 1] || []}
               setAnnotations={(annos) => setAnnotations((prev) => ({ ...prev, [i + 1]: annos }))}
+              searchQuery={searchOpen ? searchQuery : ""}
+              highlightedTextItems={highlightedTextItems.get(i + 1) || []}
+              isActiveSearchPage={searchResults.length > 0 && searchResults[currentSearchIndex]?.page === i + 1}
             />
           ))}
         </div>
+      )}
+
+      {/* Search bar — portaled to body so it stays on top */}
+      {searchOpen && createPortal(
+        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[60] flex items-center gap-2 px-3 py-2 bg-surface-container-lowest/95 dark:bg-surface-container-highest/95 backdrop-blur-xl border border-outline-variant/30 rounded-2xl shadow-2xl text-on-surface w-[min(90vw,420px)] animate-fade-in-up">
+          <span className="material-symbols-outlined text-[18px] text-on-surface-variant shrink-0">search</span>
+          <input
+            ref={searchInputRef}
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                if (e.shiftKey) prevSearchResult();
+                else if (searchResults.length > 0 && searchQuery === searchQuery) nextSearchResult();
+                else performSearch();
+              }
+              if (e.key === "Escape") closeSearch();
+            }}
+            placeholder="Search in PDF..."
+            className="flex-1 bg-transparent outline-none text-sm font-medium text-on-surface placeholder:text-outline min-w-0"
+          />
+          {searchResults.length > 0 && (
+            <span className="text-[10px] font-bold text-on-surface-variant whitespace-nowrap">
+              {currentSearchIndex + 1}/{searchResults.length}
+            </span>
+          )}
+          <button
+            onClick={performSearch}
+            className="p-1 rounded-lg hover:bg-surface-container-high transition-colors text-primary shrink-0"
+            title="Search"
+          >
+            <span className="material-symbols-outlined text-[16px]">arrow_forward</span>
+          </button>
+          <button
+            onClick={prevSearchResult}
+            disabled={searchResults.length === 0}
+            className="p-1 rounded-lg hover:bg-surface-container-high transition-colors disabled:opacity-20 text-on-surface-variant shrink-0"
+            title="Previous result"
+          >
+            <span className="material-symbols-outlined text-[16px]">expand_less</span>
+          </button>
+          <button
+            onClick={nextSearchResult}
+            disabled={searchResults.length === 0}
+            className="p-1 rounded-lg hover:bg-surface-container-high transition-colors disabled:opacity-20 text-on-surface-variant shrink-0"
+            title="Next result"
+          >
+            <span className="material-symbols-outlined text-[16px]">expand_more</span>
+          </button>
+          <button
+            onClick={closeSearch}
+            className="p-1 rounded-lg hover:bg-error/10 transition-colors text-on-surface-variant hover:text-error shrink-0"
+            title="Close search"
+          >
+            <span className="material-symbols-outlined text-[16px]">close</span>
+          </button>
+        </div>,
+        document.body
       )}
 
       {/* Right-side vertical floating toolbar — portaled to body so fixed works */}
@@ -171,6 +381,17 @@ const DocViewerComponent: React.FC<DocViewerComponentProps> = ({ document: docum
         </div>
         <button onClick={() => changePage(1)} disabled={!pdfDoc || pageNum >= pdfDoc.numPages} className="p-1.5 hover:bg-surface-container-high rounded-lg disabled:opacity-20 transition-colors text-on-surface-variant">
           <span className="material-symbols-outlined text-[18px]">expand_more</span>
+        </button>
+
+        <div className="h-px w-5 bg-outline-variant/30 my-0.5" />
+
+        {/* Search */}
+        <button
+          onClick={() => { setSearchOpen(!searchOpen); }}
+          className={cn("p-1.5 rounded-lg transition-all", searchOpen ? "bg-primary/20 text-primary" : "text-on-surface-variant hover:text-primary hover:bg-surface-container-high")}
+          title="Search in PDF (Ctrl+F)"
+        >
+          <span className="material-symbols-outlined text-[18px]">search</span>
         </button>
 
         <div className="h-px w-5 bg-outline-variant/30 my-0.5" />
@@ -214,12 +435,16 @@ interface PdfPageProps {
   activeTool: string;
   annotations: any[];
   setAnnotations: (annos: any[]) => void;
+  searchQuery: string;
+  highlightedTextItems: { text: string; transform: number[] }[];
+  isActiveSearchPage: boolean;
 }
 
 const PdfPage = React.forwardRef<HTMLDivElement, PdfPageProps>(
-  ({ pdfDoc, number, scale, activeTool, annotations, setAnnotations }, ref) => {
+  ({ pdfDoc, number, scale, activeTool, annotations, setAnnotations, searchQuery, highlightedTextItems: _highlightedTextItems, isActiveSearchPage }, ref) => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const drawingCanvasRef = useRef<HTMLCanvasElement>(null);
+    const textLayerRef = useRef<HTMLDivElement>(null);
     const [isDrawing, setIsDrawing] = useState(false);
     const [dims, setDims] = useState<{ w: number; h: number } | null>(null);
 
@@ -251,6 +476,49 @@ const PdfPage = React.forwardRef<HTMLDivElement, PdfPageProps>(
 
           renderTask = page.render({ canvasContext: ctx, viewport });
           await renderTask.promise;
+
+          // Render text layer for search highlights
+          if (textLayerRef.current && searchQuery) {
+            const textContent = await page.getTextContent();
+            const textLayerDiv = textLayerRef.current;
+            textLayerDiv.innerHTML = "";
+            textLayerDiv.style.width = `${viewport.width}px`;
+            textLayerDiv.style.height = `${viewport.height}px`;
+
+            const query = searchQuery.toLowerCase();
+
+            for (const item of textContent.items) {
+              if (!("str" in item) || !item.str) continue;
+              const str = item.str;
+              const matchesSearch = str.toLowerCase().includes(query);
+              if (!matchesSearch) continue;
+
+              const tx = (item as any).transform;
+              if (!tx || tx.length < 6) continue;
+
+              // Convert PDF coordinates to viewport coordinates
+              const [a, b, , , e, f] = tx;
+
+              // Approximate width/height
+              const fontSize = Math.sqrt(a * a + b * b) * viewport.scale;
+              const width = (item as any).width ? (item as any).width * viewport.scale : str.length * fontSize * 0.6;
+
+              const span = document.createElement("span");
+              span.style.position = "absolute";
+              span.style.left = `${e * viewport.scale}px`;
+              span.style.top = `${viewport.height - f * viewport.scale - fontSize}px`;
+              span.style.width = `${width}px`;
+              span.style.height = `${fontSize * 1.2}px`;
+              span.style.backgroundColor = isActiveSearchPage ? "rgba(255, 200, 0, 0.45)" : "rgba(255, 200, 0, 0.25)";
+              span.style.borderRadius = "2px";
+              span.style.pointerEvents = "none";
+              span.style.mixBlendMode = "multiply";
+
+              textLayerDiv.appendChild(span);
+            }
+          } else if (textLayerRef.current) {
+            textLayerRef.current.innerHTML = "";
+          }
         } catch (err: any) {
           if (err?.name === "RenderingCancelledException") return;
           console.error(`Error rendering page ${number}:`, err);
@@ -262,7 +530,7 @@ const PdfPage = React.forwardRef<HTMLDivElement, PdfPageProps>(
         cancelled = true;
         renderTask?.cancel();
       };
-    }, [pdfDoc, number, scale]);
+    }, [pdfDoc, number, scale, searchQuery, isActiveSearchPage]);
 
     // Redraw annotations overlay
     const redrawAnnotations = useCallback(() => {
@@ -291,18 +559,28 @@ const PdfPage = React.forwardRef<HTMLDivElement, PdfPageProps>(
       redrawAnnotations();
     }, [redrawAnnotations]);
 
-    const getCoords = (e: React.MouseEvent) => {
+    const getCoords = (e: React.MouseEvent | React.TouchEvent) => {
       const dc = drawingCanvasRef.current;
       if (!dc) return null;
       const rect = dc.getBoundingClientRect();
+      let clientX: number, clientY: number;
+      if ("touches" in e) {
+        if (e.touches.length !== 1) return null;
+        clientX = e.touches[0].clientX;
+        clientY = e.touches[0].clientY;
+      } else {
+        clientX = e.clientX;
+        clientY = e.clientY;
+      }
       return {
-        x: (e.clientX - rect.left) * (dc.width / rect.width),
-        y: (e.clientY - rect.top) * (dc.height / rect.height),
+        x: (clientX - rect.left) * (dc.width / rect.width),
+        y: (clientY - rect.top) * (dc.height / rect.height),
       };
     };
 
-    const startDrawing = (e: React.MouseEvent) => {
+    const startDrawing = (e: React.MouseEvent | React.TouchEvent) => {
       if (activeTool === "none") return;
+      e.preventDefault();
       setIsDrawing(true);
       const pt = getCoords(e);
       if (!pt) return;
@@ -318,8 +596,9 @@ const PdfPage = React.forwardRef<HTMLDivElement, PdfPageProps>(
       ]);
     };
 
-    const draw = (e: React.MouseEvent) => {
+    const draw = (e: React.MouseEvent | React.TouchEvent) => {
       if (!isDrawing || activeTool === "none") return;
+      e.preventDefault();
       const pt = getCoords(e);
       if (!pt) return;
       const updated = [...annotations];
@@ -329,21 +608,36 @@ const PdfPage = React.forwardRef<HTMLDivElement, PdfPageProps>(
       setAnnotations(updated);
     };
 
+    const stopDrawing = () => setIsDrawing(false);
+
     const style = dims
       ? { width: `${dims.w}px`, height: `${dims.h}px` }
       : { width: "100%", minHeight: "400px" };
 
+    // When activeTool is "none", allow touch events to pass through for native scrolling.
+    // When an annotation tool is active, intercept touches for drawing.
+    const drawingCanvasClasses = cn(
+      "absolute inset-0",
+      activeTool !== "none" ? "pointer-events-auto touch-none" : "pointer-events-none"
+    );
+
     return (
       <div ref={ref} data-page-number={number} className="relative bg-white shadow-lg shrink-0" style={style}>
         <canvas ref={canvasRef} className="block" />
+        {/* Text highlight layer for search */}
+        <div ref={textLayerRef} className="absolute top-0 left-0 pointer-events-none" />
         <canvas
           ref={drawingCanvasRef}
-          className="absolute inset-0 pointer-events-auto touch-none"
+          className={drawingCanvasClasses}
           style={{ width: "100%", height: "100%" }}
           onMouseDown={startDrawing}
           onMouseMove={draw}
-          onMouseUp={() => setIsDrawing(false)}
-          onMouseLeave={() => setIsDrawing(false)}
+          onMouseUp={stopDrawing}
+          onMouseLeave={stopDrawing}
+          onTouchStart={startDrawing}
+          onTouchMove={draw}
+          onTouchEnd={stopDrawing}
+          onTouchCancel={stopDrawing}
         />
       </div>
     );
