@@ -48,7 +48,9 @@ const Layout: React.FC = () => {
   const isActive = (path: string) => location.pathname === path;
 
   return (
-    <div className="bg-background text-on-surface selection:bg-primary-fixed selection:text-on-primary-fixed h-screen flex flex-col font-body antialiased overflow-hidden">
+    <div className={`bg-background text-on-surface selection:bg-primary-fixed selection:text-on-primary-fixed flex flex-col font-body antialiased ${
+      location.pathname === "/assistant" ? "h-screen overflow-hidden" : "min-h-screen"
+    }`}>
       {/* Desktop Navbar */}
       <header className="hidden md:block print:hidden fixed top-0 w-full z-50 bg-surface-container-lowest dark:bg-surface-container border-b border-outline-variant/40">
         <nav className="flex justify-between items-center h-16 px-8 max-w-7xl mx-auto w-full">
