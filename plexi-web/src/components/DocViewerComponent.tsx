@@ -13,9 +13,10 @@ pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjs.vers
 interface DocViewerComponentProps {
   document: string;
   filename: string;
+  isExpanded?: boolean;
 }
 
-const DocViewerComponent: React.FC<DocViewerComponentProps> = ({ document: documentUrl }) => {
+const DocViewerComponent: React.FC<DocViewerComponentProps> = ({ document: documentUrl, isExpanded = false }) => {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [pdfDoc, setPdfDoc] = useState<pdfjs.PDFDocumentProxy | null>(null);
   const [pageNum, setPageNum] = useState(1);
@@ -24,6 +25,9 @@ const DocViewerComponent: React.FC<DocViewerComponentProps> = ({ document: docum
   const [error, setError] = useState<string | null>(null);
   const [containerWidth, setContainerWidth] = useState(0);
   const baseWidthRef = useRef(0); // unscaled page-1 width
+  const [isInView, setIsInView] = useState(false);
+  const [toolbarForced, setToolbarForced] = useState(false);
+  const [toolbarMinimized, setToolbarMinimized] = useState(false);
 
   // Annotation state
   const [activeTool, setActiveTool] = useState<"none" | "marker" | "highlighter">("none");
@@ -271,6 +275,29 @@ const DocViewerComponent: React.FC<DocViewerComponentProps> = ({ document: docum
     }
   }, [searchOpen]);
 
+  // Track whether the viewer is visible in the viewport
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const threshold = isExpanded ? 0.012 : 0.02;
+    const observer = new IntersectionObserver(
+      ([entry]) => setIsInView(entry.isIntersecting),
+      { threshold }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [isExpanded]);
+
+  // Reset toolbar state when viewer comes back into view
+  useEffect(() => {
+    if (isInView) {
+      setToolbarForced(false);
+      setToolbarMinimized(false);
+    }
+  }, [isInView]);
+
+  const showToolbar = (isInView || toolbarForced) && !toolbarMinimized;
+
   return (
     <div ref={scrollRef} className="w-full bg-surface-container-low relative overflow-auto touch-pan-x touch-pan-y" style={{ WebkitOverflowScrolling: "touch" }}>
       {/* PDF pages render inline — container grows to match content */}
@@ -310,7 +337,7 @@ const DocViewerComponent: React.FC<DocViewerComponentProps> = ({ document: docum
 
       {/* Search bar — portaled to body so it stays on top */}
       {searchOpen && createPortal(
-        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[60] flex items-center gap-2 px-3 py-2 bg-surface-container-lowest/95 dark:bg-surface-container-highest/95 backdrop-blur-xl border border-outline-variant/30 rounded-2xl shadow-2xl text-on-surface w-[min(90vw,420px)] animate-fade-in-up">
+        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[60] flex items-center gap-2 px-3 py-2 bg-surface-container-lowest dark:bg-surface-container border border-outline-variant/40 rounded-2xl shadow-2xl text-on-surface w-[min(90vw,420px)] animate-fade-in-up">
           <span className="material-symbols-outlined text-[18px] text-on-surface-variant shrink-0">search</span>
           <input
             ref={searchInputRef}
@@ -369,57 +396,76 @@ const DocViewerComponent: React.FC<DocViewerComponentProps> = ({ document: docum
 
       {/* Right-side vertical floating toolbar — portaled to body so fixed works */}
       {createPortal(
-        <div className="fixed right-6 top-1/2 -translate-y-1/2 z-50 flex flex-col items-center gap-1 px-1.5 py-2 bg-surface-container-lowest/90 dark:bg-surface-container-highest/90 backdrop-blur-xl border border-outline-variant/30 rounded-2xl shadow-xl text-on-surface">
-        {/* Page navigation */}
-        <button onClick={() => changePage(-1)} disabled={pageNum <= 1} className="p-1.5 hover:bg-surface-container-high rounded-lg disabled:opacity-20 transition-colors text-on-surface-variant">
-          <span className="material-symbols-outlined text-[18px]">expand_less</span>
-        </button>
-        <div className="flex flex-col items-center select-none py-0.5">
-          <span className="text-[11px] font-black font-headline text-primary leading-none">{pageNum}</span>
-          <span className="text-[7px] text-outline leading-none">of</span>
-          <span className="text-[9px] font-bold text-on-surface-variant leading-none">{pdfDoc?.numPages || "-"}</span>
-        </div>
-        <button onClick={() => changePage(1)} disabled={!pdfDoc || pageNum >= pdfDoc.numPages} className="p-1.5 hover:bg-surface-container-high rounded-lg disabled:opacity-20 transition-colors text-on-surface-variant">
-          <span className="material-symbols-outlined text-[18px]">expand_more</span>
-        </button>
+        showToolbar ? (
+          <div className="fixed right-6 top-1/2 -translate-y-1/2 z-50 flex flex-col items-center gap-1 px-1.5 py-2 bg-surface-container-lowest dark:bg-surface-container border border-outline-variant/40 rounded-2xl shadow-xl text-on-surface transition-all duration-300">
+            {/* Page navigation */}
+            <button onClick={() => changePage(-1)} disabled={pageNum <= 1} className="p-1.5 hover:bg-surface-container-high rounded-lg disabled:opacity-20 transition-colors text-on-surface-variant">
+              <span className="material-symbols-outlined text-[18px]">expand_less</span>
+            </button>
+            <div className="flex flex-col items-center select-none py-0.5">
+              <span className="text-[11px] font-black font-headline text-primary leading-none">{pageNum}</span>
+              <span className="text-[7px] text-outline leading-none">of</span>
+              <span className="text-[9px] font-bold text-on-surface-variant leading-none">{pdfDoc?.numPages || "-"}</span>
+            </div>
+            <button onClick={() => changePage(1)} disabled={!pdfDoc || pageNum >= pdfDoc.numPages} className="p-1.5 hover:bg-surface-container-high rounded-lg disabled:opacity-20 transition-colors text-on-surface-variant">
+              <span className="material-symbols-outlined text-[18px]">expand_more</span>
+            </button>
 
-        <div className="h-px w-5 bg-outline-variant/30 my-0.5" />
+            <div className="h-px w-5 bg-outline-variant/30 my-0.5" />
 
-        {/* Search */}
-        <button
-          onClick={() => { setSearchOpen(!searchOpen); }}
-          className={cn("p-1.5 rounded-lg transition-all", searchOpen ? "bg-primary/20 text-primary" : "text-on-surface-variant hover:text-primary hover:bg-surface-container-high")}
-          title="Search in PDF (Ctrl+F)"
-        >
-          <span className="material-symbols-outlined text-[18px]">search</span>
-        </button>
+            {/* Search */}
+            <button
+              onClick={() => { setSearchOpen(!searchOpen); }}
+              className={cn("p-1.5 rounded-lg transition-all", searchOpen ? "bg-primary/20 text-primary" : "text-on-surface-variant hover:text-primary hover:bg-surface-container-high")}
+              title="Search in PDF (Ctrl+F)"
+            >
+              <span className="material-symbols-outlined text-[18px]">search</span>
+            </button>
 
-        <div className="h-px w-5 bg-outline-variant/30 my-0.5" />
+            <div className="h-px w-5 bg-outline-variant/30 my-0.5" />
 
-        {/* Zoom */}
-        <button onClick={() => adjustZoom(0.2)} className="p-1.5 hover:bg-surface-container-high rounded-lg transition-colors text-on-surface-variant">
-          <span className="material-symbols-outlined text-[18px]">zoom_in</span>
-        </button>
-        <button onClick={() => { if (!baseWidthRef.current || containerWidth <= 0) return; setScale((containerWidth - 32) / baseWidthRef.current); }} className="p-1.5 hover:bg-surface-container-high rounded-lg transition-colors text-on-surface-variant" title="Fit to width">
-          <span className="material-symbols-outlined text-[18px]">fit_width</span>
-        </button>
-        <button onClick={() => adjustZoom(-0.2)} className="p-1.5 hover:bg-surface-container-high rounded-lg transition-colors text-on-surface-variant">
-          <span className="material-symbols-outlined text-[18px]">zoom_out</span>
-        </button>
+            {/* Zoom */}
+            <button onClick={() => adjustZoom(0.2)} className="p-1.5 hover:bg-surface-container-high rounded-lg transition-colors text-on-surface-variant">
+              <span className="material-symbols-outlined text-[18px]">zoom_in</span>
+            </button>
+            <button onClick={() => { if (!baseWidthRef.current || containerWidth <= 0) return; setScale((containerWidth - 32) / baseWidthRef.current); }} className="p-1.5 hover:bg-surface-container-high rounded-lg transition-colors text-on-surface-variant" title="Fit to width">
+              <span className="material-symbols-outlined text-[18px]">fit_width</span>
+            </button>
+            <button onClick={() => adjustZoom(-0.2)} className="p-1.5 hover:bg-surface-container-high rounded-lg transition-colors text-on-surface-variant">
+              <span className="material-symbols-outlined text-[18px]">zoom_out</span>
+            </button>
 
-        <div className="h-px w-5 bg-outline-variant/30 my-0.5" />
+            <div className="h-px w-5 bg-outline-variant/30 my-0.5" />
 
-        {/* Annotation tools */}
-        <button onClick={() => setActiveTool(activeTool === "highlighter" ? "none" : "highlighter")} className={cn("p-1.5 rounded-lg transition-all", activeTool === "highlighter" ? "bg-primary/20 text-primary" : "text-on-surface-variant hover:text-primary")}>
-          <span className="material-symbols-outlined text-[18px]">stylus_note</span>
-        </button>
-        <button onClick={() => setActiveTool(activeTool === "marker" ? "none" : "marker")} className={cn("p-1.5 rounded-lg transition-all", activeTool === "marker" ? "bg-primary/20 text-primary" : "text-on-surface-variant hover:text-primary")}>
-          <span className="material-symbols-outlined text-[18px]">edit</span>
-        </button>
-        <button onClick={undoLastAnnotation} className="p-1.5 text-on-surface-variant hover:text-error hover:bg-error/10 rounded-lg transition-all" title="Undo last annotation">
-          <span className="material-symbols-outlined text-[18px]">ink_eraser</span>
-        </button>
-      </div>,
+            {/* Annotation tools */}
+            <button onClick={() => setActiveTool(activeTool === "highlighter" ? "none" : "highlighter")} className={cn("p-1.5 rounded-lg transition-all", activeTool === "highlighter" ? "bg-primary/20 text-primary" : "text-on-surface-variant hover:text-primary")}>
+              <span className="material-symbols-outlined text-[18px]">stylus_note</span>
+            </button>
+            <button onClick={() => setActiveTool(activeTool === "marker" ? "none" : "marker")} className={cn("p-1.5 rounded-lg transition-all", activeTool === "marker" ? "bg-primary/20 text-primary" : "text-on-surface-variant hover:text-primary")}>
+              <span className="material-symbols-outlined text-[18px]">edit</span>
+            </button>
+            <button onClick={undoLastAnnotation} className="p-1.5 text-on-surface-variant hover:text-error hover:bg-error/10 rounded-lg transition-all" title="Undo last annotation">
+              <span className="material-symbols-outlined text-[18px]">ink_eraser</span>
+            </button>
+
+            <div className="h-px w-5 bg-outline-variant/30 my-0.5" />
+
+            {/* Minimize toolbar */}
+            <button onClick={() => { setToolbarMinimized(true); setToolbarForced(false); }} className="p-1.5 text-on-surface-variant hover:text-primary hover:bg-surface-container-high rounded-lg transition-all" title="Minimize toolbar">
+              <span className="material-symbols-outlined text-[18px]">keyboard_double_arrow_right</span>
+            </button>
+          </div>
+        ) : (
+          /* Minimized toolbar toggle — same style as scroll-to-top FAB, sits just above it */
+          <button
+            onClick={() => { setToolbarMinimized(false); setToolbarForced(true); }}
+            className="fixed bottom-40 md:bottom-20 right-8 z-50 p-3 bg-primary text-on-primary rounded-full shadow-xl hover:shadow-2xl hover:scale-110 transition-all duration-300 animate-fade-in-up"
+            title="Show PDF toolbar"
+            aria-label="Show PDF toolbar"
+          >
+            <span className="material-symbols-outlined text-[22px] block">build</span>
+          </button>
+        ),
         document.body
       )}
     </div>

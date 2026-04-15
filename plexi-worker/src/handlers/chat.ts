@@ -141,6 +141,7 @@ export async function handleChatStream(request: Request, env: Env): Promise<Resp
           'Content-Type': 'text/event-stream',
           'Cache-Control': 'no-cache',
           'Connection': 'keep-alive',
+          'Content-Encoding': 'identity',
         },
       });
     }
@@ -254,6 +255,7 @@ export async function handleChatStream(request: Request, env: Env): Promise<Resp
       'Content-Type': 'text/event-stream',
       'Cache-Control': 'no-cache',
       'Connection': 'keep-alive',
+      'Content-Encoding': 'identity',
     },
   });
 }

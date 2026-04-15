@@ -12,10 +12,10 @@ const renderMarkdown = (content: string) =>
 
 const SCOPE_STORAGE_KEY = "plexi_scope";
 const PROMPT_SUGGESTIONS = [
-  "Explain the core concepts",
-  "Summarize Unit 1",
-  "Provide common exam questions",
-  "Define key terminology",
+  "Explain the core concepts of this subject",
+  "Summarize Unit 1 for me",
+  "Give me common exam questions",
+  "Define the key terminology",
 ];
 
 interface StoredScope {
@@ -43,16 +43,19 @@ const Assistant: React.FC = () => {
     Array<{ filename: string | null }>
   >([]);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
 
   const apiKey = settings.apiKey;
   const providerId = settings.providerId;
   const model = settings.model;
 
+  // Auto-scroll to bottom on new messages
   useEffect(() => {
     if (scrollRef.current)
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
   }, [messages, chatLoading]);
 
+  // Restore scope from localStorage
   useEffect(() => {
     const raw = localStorage.getItem(SCOPE_STORAGE_KEY);
     if (!raw) return;
@@ -65,6 +68,7 @@ const Assistant: React.FC = () => {
     }
   }, []);
 
+  // Save scope to localStorage
   useEffect(() => {
     if (semester && subject)
       localStorage.setItem(
@@ -73,6 +77,7 @@ const Assistant: React.FC = () => {
       );
   }, [semester, subject]);
 
+  // Bootstrap logic
   useEffect(() => {
     if (isSettingsOpen) return;
     if (!settings.apiKey) {
@@ -149,8 +154,10 @@ Respond to the student's message using the rules above.`;
     setError(null);
     setCacheNotice(null);
 
+    // Reset textarea height
+    if (inputRef.current) inputRef.current.style.height = "auto";
+
     try {
-      // Step 1: Retrieve context from RAG
       const retrieveResult = await api.retrieve({
         query: userMsg,
         semester,
@@ -164,7 +171,6 @@ Respond to the student's message using the rules above.`;
       ];
       const cacheKey = `${semester}::${subject}`;
 
-      // Step 2: Add empty assistant message placeholder
       const streamingMessages = [
         ...nextMessages,
         { role: "assistant" as const, content: "" },
@@ -172,7 +178,6 @@ Respond to the student's message using the rules above.`;
       setMessages(streamingMessages);
       isStreaming.current = true;
 
-      // Step 3: Stream tokens
       const { cached: answerCached } = await api.chatStream(
         {
           endpoint: activeProvider.baseUrl,
@@ -182,7 +187,6 @@ Respond to the student's message using the rules above.`;
           cacheKey,
         },
         (token) => {
-          // Append each token to the last (assistant) message
           setMessages((prev) => {
             const updated = [...prev];
             const last = updated[updated.length - 1];
@@ -199,7 +203,6 @@ Respond to the student's message using the rules above.`;
 
       isStreaming.current = false;
 
-      // Step 4: Set cache notice
       const notices: string[] = [];
       if (retrieveResult.cached) notices.push("materials");
       if (answerCached) notices.push("answer");
@@ -213,7 +216,6 @@ Respond to the student's message using the rules above.`;
           ? sendError.message
           : "An unexpected error occurred.",
       );
-      // Remove the empty placeholder message on error
       setMessages((prev) => {
         const last = prev[prev.length - 1];
         if (last?.role === "assistant" && !last.content) {
@@ -226,6 +228,20 @@ Respond to the student's message using the rules above.`;
     }
   };
 
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      void handleSendMessage(e as unknown as React.FormEvent);
+    }
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setInput(e.target.value);
+    // Auto-resize textarea
+    e.target.style.height = "auto";
+    e.target.style.height = `${Math.min(e.target.scrollHeight, 160)}px`;
+  };
+
   const resetSession = () => {
     localStorage.removeItem(SCOPE_STORAGE_KEY);
     setSemester("");
@@ -236,11 +252,13 @@ Respond to the student's message using the rules above.`;
   };
 
   return (
-    <div className="w-full h-[calc(100vh-8rem)] bg-surface-container-lowest border border-outline-variant/30 rounded-2xl shadow-[0_8px_30px_rgba(0,0,0,0.04)] flex overflow-hidden relative print:h-auto print:overflow-visible print:border-none print:shadow-none">
+    <div className="w-full flex flex-col flex-1 overflow-hidden pt-16">
       <SEO
         title="Plexi | AI Assistant"
         description="Interact with your course materials through an AI-powered study assistant. Get precise answers based on your notes and syllabus."
       />
+
+      {/* Scope Selector Modal */}
       {showScopePrompt && (
         <div className="absolute inset-0 z-50 bg-surface-container-lowest/90 backdrop-blur-sm flex items-center justify-center p-4 md:p-8">
           <div className="w-full max-w-4xl h-full md:h-auto max-h-[95vh] md:max-h-[80vh] bg-surface shadow-2xl rounded-3xl border border-outline-variant/20 overflow-hidden flex flex-col relative">
@@ -263,96 +281,186 @@ Respond to the student's message using the rules above.`;
         </div>
       )}
 
-      {/* Main Chat Area */}
-      <div className="flex flex-col flex-1 min-w-0 relative">
-        {/* Chat Header */}
-        <header className="px-6 py-4 border-b border-outline-variant/30 bg-surface-container-lowest/80 backdrop-blur-md z-10 flex items-center justify-between gap-4 print:hidden">
-          <div className="flex items-center gap-3 flex-1 overflow-x-auto no-scrollbar">
-            <div className="flex items-center shrink-0 bg-surface-container p-0.5 rounded-lg border border-outline-variant/20">
-              <select
-                className="bg-transparent text-sm font-bold text-on-surface py-2 pl-4 pr-8 outline-none border-none appearance-none cursor-pointer relative hover:bg-surface-variant transition-colors rounded-l-md"
-                value={semester}
-                onChange={(e) => {
-                  setSemester(e.target.value);
-                  setSubject("");
-                }}
-              >
-                <option value="" disabled>
-                  Semester
-                </option>
-                {semesters.map((value) => (
-                  <option key={value} value={value}>
-                    {value}
-                  </option>
-                ))}
-              </select>
-              <div className="w-px h-6 bg-outline-variant/40"></div>
-              <select
-                className="bg-transparent text-sm font-bold text-on-surface py-2 pl-4 pr-8 outline-none border-none appearance-none cursor-pointer hover:bg-surface-variant transition-colors rounded-r-md"
-                value={subject}
-                onChange={(e) => setSubject(e.target.value)}
-                disabled={!semester}
-              >
-                <option value="" disabled>
-                  Subject
-                </option>
-                {subjects.map((value) => (
-                  <option key={value} value={value}>
-                    {value}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {cacheNotice && (
-              <span className="hidden sm:flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-bold bg-tertiary-fixed text-on-tertiary-fixed shrink-0 shadow-sm">
-                <span className="material-symbols-outlined text-[14px]">
-                  bolt
-                </span>
-                {cacheNotice}
-              </span>
-            )}
-          </div>
-
-          <div className="flex items-center gap-1 shrink-0">
-            <button
-              onClick={() => window.print()}
-              disabled={messages.length === 0}
-              className="p-2 rounded-full text-outline hover:bg-surface-container-high transition-colors lg:hidden flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
-              title="Save as PDF"
-            >
-              <span className="material-symbols-outlined">picture_as_pdf</span>
-            </button>
-            <button
-              onClick={() => setShowSidebar(!showSidebar)}
-              className="p-2 rounded-full text-outline hover:bg-surface-container-high transition-colors lg:hidden flex items-center justify-center"
-            >
-              <span className="material-symbols-outlined">
-                {showSidebar ? "close" : "info"}
-              </span>
-            </button>
-          </div>
-        </header>
-
-        {/* Chat Feed */}
+      {/* Sidebar Overlay (drawer) */}
+      {showSidebar && (
         <div
-          ref={scrollRef}
-          className="flex-1 overflow-y-auto p-4 md:p-8 flex flex-col gap-6 pb-4 print:overflow-visible print:h-auto"
-        >
-          {!settings.apiKey ? (
-            <div className="flex-1 flex flex-col items-center justify-center text-center max-w-xl mx-auto opacity-80 mt-12">
-              <div className="w-20 h-20 bg-error-container/40 rounded-[2rem] flex items-center justify-center mb-6 shadow-inner border border-error/10">
-                <span className="material-symbols-outlined text-4xl text-error">
-                  key_off
-                </span>
+          className="fixed inset-0 z-30 bg-black/30"
+          onClick={() => setShowSidebar(false)}
+        />
+      )}
+      <div
+        className={`fixed right-0 top-0 h-full w-[320px] z-40 bg-surface-container-lowest dark:bg-surface-container border-l border-outline-variant/30 shadow-2xl flex flex-col transform transition-transform duration-300 ease-in-out print:hidden ${
+          showSidebar ? "translate-x-0" : "translate-x-full"
+        }`}
+      >
+        <div className="flex items-center justify-between px-6 py-4 border-b border-outline-variant/20">
+          <h3 className="font-headline font-bold text-lg text-on-surface">Session Info</h3>
+          <button
+            onClick={() => setShowSidebar(false)}
+            className="p-2 rounded-full hover:bg-surface-container-high transition-colors text-on-surface-variant"
+          >
+            <span className="material-symbols-outlined text-[20px]">close</span>
+          </button>
+        </div>
+
+        <div className="flex-1 overflow-y-auto p-6 flex flex-col gap-8 no-scrollbar">
+          {/* Intelligence Setup */}
+          <div>
+            <div className="text-xs font-bold uppercase tracking-widest text-secondary font-label mb-4">
+              Intelligence Setup
+            </div>
+            <div className="flex flex-col gap-3">
+              <div className="bg-surface-container p-4 rounded-xl border border-outline-variant/20 flex items-center gap-4">
+                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                  <span className="material-symbols-outlined text-[20px] text-primary">hub</span>
+                </div>
+                <div className="flex flex-col min-w-0">
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-outline">Provider</span>
+                  <span className="text-sm font-bold text-on-surface truncate">{activeProvider.name}</span>
+                </div>
               </div>
-              <h2 className="text-3xl font-black font-headline text-on-surface mb-4 tracking-tight">
-                API Key Required
-              </h2>
-              <p className="text-on-surface-variant text-base mb-8 leading-relaxed">
-                Please configure your AI provider and API key in the settings to
-                start chatting with Plexi.
-              </p>
+              <div className="bg-surface-container p-4 rounded-xl border border-outline-variant/20 flex items-center gap-4">
+                <div className="w-10 h-10 rounded-full bg-surface-container-high flex items-center justify-center shrink-0">
+                  <span className="material-symbols-outlined text-[20px] text-on-surface-variant">memory</span>
+                </div>
+                <div className="flex flex-col min-w-0">
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-outline">Model</span>
+                  <span className="text-sm font-bold text-on-surface truncate">{model}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Current Scope */}
+          <div>
+            <div className="text-xs font-bold uppercase tracking-widest text-secondary font-label mb-4">
+              Current Scope
+            </div>
+            <ul className="space-y-4">
+              <li className="flex justify-between items-center text-sm">
+                <span className="text-on-surface-variant font-medium">Semester</span>
+                <span className="font-bold text-on-surface">{semester || "—"}</span>
+              </li>
+              <li className="flex justify-between items-center text-sm">
+                <span className="text-on-surface-variant font-medium">Subject</span>
+                <span className="font-bold text-on-surface truncate max-w-[160px]" title={subject}>
+                  {subject || "—"}
+                </span>
+              </li>
+              <li className="flex justify-between items-center text-sm">
+                <span className="text-on-surface-variant font-medium">Messages</span>
+                <span className="font-bold text-on-surface px-2.5 py-0.5 bg-primary/10 text-primary rounded-md">
+                  {messages.length}
+                </span>
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        {/* Sidebar actions */}
+        <div className="p-6 border-t border-outline-variant/20 flex flex-col gap-3">
+          <button
+            onClick={() => window.print()}
+            disabled={messages.length === 0}
+            className="w-full px-4 py-3 rounded-xl border border-outline-variant/20 bg-surface-container text-primary font-bold text-sm hover:bg-primary/5 hover:border-primary/20 transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <span className="material-symbols-outlined text-[18px]">picture_as_pdf</span>
+            Save as PDF
+          </button>
+          <button
+            onClick={() => { resetSession(); setShowSidebar(false); }}
+            className="w-full px-4 py-3 rounded-xl border border-outline-variant/20 bg-surface-container text-error font-bold text-sm hover:bg-error/5 hover:border-error/20 transition-all flex items-center justify-center gap-2"
+          >
+            <span className="material-symbols-outlined text-[18px]">delete</span>
+            Clear Session
+          </button>
+        </div>
+      </div>
+
+      {/* ── Chat Header ── */}
+      <header className="px-4 md:px-6 py-3 border-b border-outline-variant/20 bg-surface-container-lowest dark:bg-surface-container z-10 flex items-center justify-between gap-4 shrink-0 print:hidden">
+        <div className="flex items-center gap-2 flex-1 overflow-hidden">
+          {/* Scope selectors */}
+          <div className="flex items-center bg-surface-container rounded-lg border border-outline-variant/20 overflow-hidden shrink-0">
+            <select
+              className="bg-transparent text-sm font-bold text-on-surface py-2 pl-3 pr-7 outline-none border-none appearance-none cursor-pointer"
+              value={semester}
+              onChange={(e) => { setSemester(e.target.value); setSubject(""); }}
+            >
+              <option value="" disabled>Semester</option>
+              {semesters.map((value) => (
+                <option key={value} value={value}>{value}</option>
+              ))}
+            </select>
+            <div className="w-px h-5 bg-outline-variant/40" />
+            <select
+              className="bg-transparent text-sm font-bold text-on-surface py-2 pl-3 pr-7 outline-none border-none appearance-none cursor-pointer"
+              value={subject}
+              onChange={(e) => setSubject(e.target.value)}
+              disabled={!semester}
+            >
+              <option value="" disabled>Subject</option>
+              {subjects.map((value) => (
+                <option key={value} value={value}>{value}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Cache notice */}
+          {cacheNotice && (
+            <span className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-tertiary-fixed text-on-tertiary-fixed shrink-0 shadow-sm">
+              <span className="material-symbols-outlined text-[14px]">bolt</span>
+              {cacheNotice}
+            </span>
+          )}
+        </div>
+
+        {/* Header actions */}
+        <div className="flex items-center gap-1 shrink-0">
+          <button
+            onClick={() => setShowScopePrompt(true)}
+            className="p-2 rounded-full text-on-surface-variant hover:bg-surface-container-high transition-colors"
+            title="Change study scope"
+          >
+            <span className="material-symbols-outlined text-[20px]">tune</span>
+          </button>
+          <button
+            onClick={() => window.print()}
+            disabled={messages.length === 0}
+            className="p-2 rounded-full text-on-surface-variant hover:bg-surface-container-high transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            title="Save as PDF"
+          >
+            <span className="material-symbols-outlined text-[20px]">picture_as_pdf</span>
+          </button>
+          <button
+            onClick={() => setShowSidebar(!showSidebar)}
+            className="p-2 rounded-full text-on-surface-variant hover:bg-surface-container-high transition-colors"
+            title="Session info"
+          >
+            <span className="material-symbols-outlined text-[20px]">info</span>
+          </button>
+        </div>
+      </header>
+
+      {/* ── Chat Feed ── */}
+      <div
+        ref={scrollRef}
+        className="flex-1 overflow-y-auto bg-background print:overflow-visible print:h-auto"
+      >
+        <div className="max-w-3xl mx-auto px-4 md:px-6 py-6 flex flex-col gap-2 print:max-w-none">
+
+          {/* ── Empty / Welcome State ── */}
+          {!settings.apiKey ? (
+            <div className="flex flex-col items-center justify-center text-center min-h-[60vh] max-w-md mx-auto gap-6">
+              <div className="w-20 h-20 bg-error/10 rounded-[2rem] flex items-center justify-center shadow-inner border border-error/20">
+                <span className="material-symbols-outlined text-4xl text-error">key_off</span>
+              </div>
+              <div>
+                <h2 className="text-3xl font-black font-headline text-on-surface mb-3 tracking-tight">API Key Required</h2>
+                <p className="text-on-surface-variant text-base leading-relaxed">
+                  Configure your AI provider and API key in Settings to start chatting with Plexi.
+                </p>
+              </div>
               <div className="flex flex-col sm:flex-row items-center gap-3">
                 <button
                   onClick={() => setIsSettingsOpen(true)}
@@ -365,7 +473,7 @@ Respond to the student's message using the rules above.`;
                   href="https://chatgpt.com/g/g-69caa671910481919ce71d19952e34e5-plexi"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="px-6 py-3 bg-surface-container-high text-on-surface rounded-full font-bold shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all flex items-center gap-2 border border-outline-variant/30"
+                  className="px-6 py-3 bg-surface-container border border-outline-variant/30 text-on-surface rounded-full font-bold hover:bg-surface-container-high transition-all flex items-center gap-2"
                 >
                   <span className="material-symbols-outlined">smart_toy</span>
                   Use Plexi in ChatGPT
@@ -373,115 +481,114 @@ Respond to the student's message using the rules above.`;
               </div>
             </div>
           ) : messages.length === 0 ? (
-            <div className="flex-1 flex flex-col items-center justify-center text-center max-w-xl mx-auto opacity-80 mt-12">
-              <div className="w-20 h-20 bg-primary-fixed/40 rounded-[2rem] flex items-center justify-center mb-6 shadow-inner border border-primary/10">
-                <span className="material-symbols-outlined text-4xl text-primary">
-                  forum
-                </span>
+            <div className="flex flex-col items-center justify-center text-center min-h-[60vh] max-w-lg mx-auto gap-6">
+              <div className="w-20 h-20 bg-primary/10 rounded-[2rem] flex items-center justify-center border border-primary/20">
+                <span className="material-symbols-outlined text-4xl text-primary">robot_2</span>
               </div>
-              <h2 className="text-3xl font-black font-headline text-on-surface mb-4 tracking-tight">
-                Your AI Study Assistant
-              </h2>
-              <p className="text-on-surface-variant text-base mb-8 leading-relaxed">
-                Select your scope above, and ask anything. Plexi will securely
-                scan the actual course materials and construct precise, grounded
-                answers.
-              </p>
+              <div>
+                <h2 className="text-3xl font-black font-headline text-on-surface mb-3 tracking-tight">
+                  {subject ? `Ask about ${subject}` : "Your AI Study Assistant"}
+                </h2>
+                <p className="text-on-surface-variant text-base leading-relaxed">
+                  {subject
+                    ? `I'll scan your ${subject} course materials and give you precise, grounded answers.`
+                    : "Select your semester and subject above, then ask me anything."}
+                </p>
+              </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full mb-8">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full">
                 {PROMPT_SUGGESTIONS.map((prompt) => (
                   <button
                     key={prompt}
                     onClick={() => setInput(prompt)}
-                    className="p-4 rounded-xl border border-outline-variant/30 bg-surface-container-lowest hover:bg-surface-container-low hover:border-primary/30 transition-all text-sm font-medium text-on-surface-variant text-left flex items-center justify-between group shadow-sm"
+                    className="p-4 rounded-xl border border-outline-variant/30 bg-surface-container hover:bg-surface-container-high hover:border-primary/30 transition-all text-sm font-medium text-on-surface-variant text-left flex items-center justify-between group"
                   >
                     {prompt}
-                    <span className="material-symbols-outlined text-[18px] opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all text-primary">
+                    <span className="material-symbols-outlined text-[18px] opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all text-primary shrink-0 ml-2">
                       arrow_forward
                     </span>
                   </button>
                 ))}
               </div>
 
-              <div className="w-full bg-surface-container-low/50 p-4 rounded-xl border border-dashed border-outline-variant/30 text-left flex flex-col gap-2">
-                <div className="flex items-center gap-2 text-on-surface-variant font-bold font-headline text-sm mb-1">
-                  <span className="material-symbols-outlined">extension</span>
-                  Want to use Plexi with ChatGPT or Claude?
+              <div className="w-full bg-surface-container p-4 rounded-xl border border-dashed border-outline-variant/30 text-left flex flex-col gap-2">
+                <div className="flex items-center gap-2 text-on-surface-variant font-bold text-sm">
+                  <span className="material-symbols-outlined text-[18px]">extension</span>
+                  Want to use Plexi with Claude or ChatGPT desktop?
                 </div>
                 <p className="text-sm text-on-surface-variant leading-relaxed">
-                  Plexi can run as an MCP (Model Context Protocol) Server,
-                  allowing you to seamlessly integrate your study materials with
-                  your favorite AI desktop clients.
+                  Plexi can run as an MCP Server, letting you use your study materials in any AI client.
                 </p>
-                <div className="flex items-center gap-3 mt-2">
-                  <a
-                    href="https://ko-fi.com/post/Setting-Up-Plexi-MCP-for-Claude-and-ChatGPT-X8X11X3IKZ"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-bold text-primary bg-primary/5 hover:bg-primary/10 border border-primary/20 transition-colors"
-                  >
-                    Setup Guide
-                    <span className="material-symbols-outlined text-[12px]">
-                      open_in_new
-                    </span>
-                  </a>
-                </div>
+                <a
+                  href="https://ko-fi.com/post/Setting-Up-Plexi-MCP-for-Claude-and-ChatGPT-X8X11X3IKZ"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-bold text-primary bg-primary/5 hover:bg-primary/10 border border-primary/20 transition-colors self-start mt-1"
+                >
+                  Setup Guide
+                  <span className="material-symbols-outlined text-[12px]">open_in_new</span>
+                </a>
               </div>
             </div>
           ) : (
+            /* ── Message List ── */
             <>
               {messages.map((message, index) => (
                 <div
                   key={index}
-                  className={`flex flex-col max-w-[85%] md:max-w-[75%] ${message.role === "user"
-                      ? "self-end items-end"
-                      : "self-start items-start"
-                    }`}
+                  className={`flex gap-4 px-2 py-4 rounded-2xl ${
+                    message.role === "user"
+                      ? "bg-surface-container/50"
+                      : ""
+                  }`}
                 >
-                  <div
-                    className={`flex items-center gap-2 mb-1.5 px-1 ${message.role === "user" ? "flex-row-reverse" : ""}`}
-                  >
-                    <span className="material-symbols-outlined text-[14px] text-outline">
+                  {/* Avatar */}
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 mt-0.5 ${
+                    message.role === "user"
+                      ? "bg-primary/20"
+                      : "bg-primary/10 border border-primary/20"
+                  }`}>
+                    <span className={`material-symbols-outlined text-[18px] ${
+                      message.role === "user" ? "text-primary" : "text-primary"
+                    }`}>
                       {message.role === "user" ? "person" : "robot_2"}
                     </span>
-                    <span className="text-xs font-bold uppercase tracking-widest text-outline font-label">
-                      {message.role === "user" ? "You" : "Plexi"}
-                    </span>
                   </div>
-                  <div
-                    className={`p-5 rounded-2xl shadow-sm text-[15px] leading-relaxed break-words ${message.role === "user"
-                        ? "bg-primary text-on-primary rounded-tr-sm"
-                        : "bg-surface-container-low text-on-surface border border-outline-variant/20 rounded-tl-sm"
-                      }`}
-                  >
+
+                  {/* Content */}
+                  <div className="flex-1 min-w-0">
+                    {/* Role label */}
+                    <div className="text-xs font-black uppercase tracking-widest text-on-surface-variant mb-2 font-label">
+                      {message.role === "user" ? "You" : "Plexi"}
+                    </div>
+
+                    {/* Message body */}
                     <div
-                      className={`prose prose-sm max-w-none prose-p:my-2 prose-a:text-primary-container prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded ${message.role === "user"
-                          ? "prose-p:text-on-primary prose-headings:text-on-primary prose-strong:text-on-primary prose-li:text-on-primary"
-                          : "dark:prose-invert prose-code:bg-surface-container-highest prose-pre:bg-surface-container-highest prose-pre:text-on-surface"
-                        }`}
-                      dangerouslySetInnerHTML={{
-                        __html: renderMarkdown(message.content),
-                      }}
+                      className={`prose prose-base max-w-none leading-relaxed break-words text-[15px] ${
+                        message.role === "user"
+                          ? "prose-p:text-on-surface prose-headings:text-on-surface prose-strong:text-on-surface prose-li:text-on-surface text-on-surface"
+                          : "dark:prose-invert prose-code:bg-surface-container prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-pre:bg-surface-container prose-pre:text-on-surface prose-a:text-primary prose-headings:text-on-surface text-on-surface"
+                      }`}
+                      dangerouslySetInnerHTML={{ __html: renderMarkdown(message.content) }}
                     />
+
                     {/* Streaming cursor */}
                     {message.role === "assistant" &&
                       index === messages.length - 1 &&
                       chatLoading && (
-                        <span className="inline-block w-2 h-4 ml-1 bg-primary rounded-sm animate-pulse" />
+                        <span className="inline-block w-2 h-4 ml-1 bg-primary rounded-sm animate-pulse align-middle" />
                       )}
 
-                    {/* Render Context References for the last AI message */}
+                    {/* Sources for last assistant message */}
                     {message.role === "assistant" &&
                       index === messages.length - 1 &&
                       retrievedContext.length > 0 && (
-                        <div className="mt-5 pt-4 border-t border-outline-variant/30">
+                        <div className="mt-5 pt-4 border-t border-outline-variant/20">
                           <span className="text-xs font-bold uppercase tracking-widest text-secondary font-label mb-3 flex items-center gap-1.5">
-                            <span className="material-symbols-outlined text-[14px]">
-                              library_books
-                            </span>
+                            <span className="material-symbols-outlined text-[14px]">library_books</span>
                             Sources Checked
                           </span>
-                          <div className="flex flex-wrap gap-2">
+                          <div className="flex flex-wrap gap-2 mt-2">
                             {Array.from(
                               new Set(
                                 retrievedContext
@@ -491,11 +598,9 @@ Respond to the student's message using the rules above.`;
                             ).map((filename) => (
                               <span
                                 key={filename}
-                                className="px-2.5 py-1.5 rounded-lg text-xs font-medium bg-surface-container-high text-on-surface-variant border border-outline-variant/20 truncate max-w-[200px] flex items-center gap-1.5"
+                                className="px-2.5 py-1.5 rounded-lg text-xs font-medium bg-surface-container text-on-surface-variant border border-outline-variant/20 truncate max-w-[220px] flex items-center gap-1.5"
                               >
-                                <span className="material-symbols-outlined text-[14px] opacity-70">
-                                  draft
-                                </span>
+                                <span className="material-symbols-outlined text-[14px] opacity-70">draft</span>
                                 {filename}
                               </span>
                             ))}
@@ -508,191 +613,68 @@ Respond to the student's message using the rules above.`;
             </>
           )}
 
+          {/* ── Loading (pre-streaming) ── */}
           {chatLoading && !isStreaming.current && (
-            <div className="self-start flex flex-col items-start max-w-[85%]">
-              <div className="flex items-center gap-2 mb-1.5 px-1">
-                <span className="material-symbols-outlined text-[14px] text-outline">
-                  robot_2
-                </span>
-                <span className="text-xs font-bold uppercase tracking-widest text-outline font-label">
-                  Plexi
-                </span>
+            <div className="flex gap-4 px-2 py-4">
+              <div className="w-8 h-8 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0">
+                <span className="material-symbols-outlined text-[18px] text-primary">robot_2</span>
               </div>
-              <div className="p-5 rounded-2xl rounded-tl-sm bg-surface-container-low text-on-surface border border-outline-variant/20 shadow-sm flex items-center gap-3">
-                <span className="material-symbols-outlined animate-spin text-primary">
-                  progress_activity
-                </span>
-                <span className="text-sm font-medium text-secondary">
-                  Scanning study materials...
-                </span>
+              <div className="flex-1">
+                <div className="text-xs font-black uppercase tracking-widest text-on-surface-variant mb-2 font-label">Plexi</div>
+                <div className="flex items-center gap-3 text-on-surface-variant">
+                  <span className="material-symbols-outlined animate-spin text-primary text-[20px]">progress_activity</span>
+                  <span className="text-sm font-medium">Scanning study materials...</span>
+                </div>
               </div>
             </div>
           )}
 
+          {/* ── Error ── */}
           {error && (
-            <div className="mx-auto bg-error-container text-on-error-container px-5 py-3 rounded-xl flex items-center gap-3 shadow-sm border border-error/20 max-w-lg mt-4">
-              <span className="material-symbols-outlined text-[20px]">
-                warning
-              </span>
+            <div className="mx-auto bg-error/10 text-error px-5 py-3 rounded-xl flex items-center gap-3 border border-error/20 max-w-lg mt-2">
+              <span className="material-symbols-outlined text-[20px] shrink-0">warning</span>
               <p className="text-sm font-medium">{error}</p>
             </div>
           )}
         </div>
-
-        {/* Input Area */}
-        <div className="w-full p-4 md:p-6 bg-surface-container-lowest border-t border-outline-variant/20 z-10 shrink-0 print:hidden">
-          <form
-            onSubmit={handleSendMessage}
-            className="max-w-4xl mx-auto relative flex items-center shadow-card rounded-full bg-surface-container-lowest border-2 border-outline-variant/40 focus-within:border-primary/40 focus-within:ring-4 focus-within:ring-primary/10 transition-all"
-          >
-            <input
-              type="text"
-              className="w-full bg-transparent text-on-surface pl-6 pr-14 py-4 md:py-5 outline-none text-sm md:text-base font-medium placeholder:text-outline/60"
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              placeholder={
-                !settings.apiKey
-                  ? "API key required..."
-                  : !bootstrapped
-                    ? "Configuring Assistant..."
-                    : subject
-                      ? `Ask about ${subject}...`
-                      : "Select a semester and subject first..."
-              }
-              disabled={
-                !settings.apiKey || !bootstrapped || chatLoading || !subject
-              }
-            />
-            <button
-              type="submit"
-              disabled={
-                !bootstrapped || !input.trim() || chatLoading || !subject
-              }
-              className="absolute right-2 md:right-2 w-10 h-10 md:w-12 md:h-12 bg-transparent text-primary hover:bg-primary/10 active:scale-90 rounded-full flex items-center justify-center disabled:opacity-50 transition-all p-2"
-            >
-              <span className="material-symbols-outlined text-[20px] md:text-[24px]">
-                send
-              </span>
-            </button>
-          </form>
-        </div>
       </div>
 
-      {/* Sidebar (Settings Info) */}
-      <div
-        className={`${showSidebar ? "flex" : "hidden"
-          } lg:flex w-full absolute inset-0 bg-surface-container-lowest z-20 lg:relative lg:w-[320px] lg:bg-surface-container-low border-l border-outline-variant/30 flex-col overflow-y-auto no-scrollbar transition-all print:hidden`}
-      >
-        <div className="p-6 flex flex-col gap-10">
-          <div className="flex items-center justify-between lg:hidden">
-            <h3 className="font-headline font-bold text-lg text-on-surface">
-              Session Info
-            </h3>
-            <button
-              onClick={() => setShowSidebar(false)}
-              className="p-2 rounded-full bg-surface-container hover:bg-surface-container-highest transition-colors"
-            >
-              <span className="material-symbols-outlined text-[20px]">
-                close
-              </span>
-            </button>
-          </div>
-
-          <div>
-            <div className="text-xs font-bold uppercase tracking-widest text-secondary font-label mb-4">
-              Intelligence Setup
-            </div>
-            <div className="flex flex-col gap-4">
-              <div className="bg-surface-container-lowest p-4 rounded-xl border border-outline-variant/20 flex items-center gap-4 shadow-sm">
-                <div className="w-10 h-10 rounded-full bg-primary-fixed/50 flex items-center justify-center shrink-0">
-                  <span className="material-symbols-outlined text-[20px] text-primary">
-                    hub
-                  </span>
-                </div>
-                <div className="flex flex-col min-w-0">
-                  <span className="text-[11px] font-bold uppercase tracking-wider text-outline">
-                    Provider
-                  </span>
-                  <span className="text-sm font-bold text-on-surface truncate">
-                    {activeProvider.name}
-                  </span>
-                </div>
-              </div>
-
-              <div className="bg-surface-container-lowest p-4 rounded-xl border border-outline-variant/20 flex items-center gap-4 shadow-sm">
-                <div className="w-10 h-10 rounded-full bg-surface-container-low flex items-center justify-center shrink-0">
-                  <span className="material-symbols-outlined text-[20px] text-on-surface-variant">
-                    memory
-                  </span>
-                </div>
-                <div className="flex flex-col min-w-0">
-                  <span className="text-[11px] font-bold uppercase tracking-wider text-outline">
-                    Model
-                  </span>
-                  <span className="text-sm font-bold text-on-surface truncate">
-                    {model}
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="h-px bg-outline-variant/30 w-full hidden"></div>
-
-          <div>
-            <div className="text-xs font-bold uppercase tracking-widest text-secondary font-label mb-4">
-              Current Scope
-            </div>
-            <ul className="space-y-4">
-              <li className="flex justify-between items-center text-sm">
-                <span className="text-secondary font-medium">Semester</span>
-                <span className="font-bold text-on-surface">
-                  {semester || "—"}
-                </span>
-              </li>
-              <li className="flex justify-between items-center text-sm">
-                <span className="text-secondary font-medium">Subject</span>
-                <span
-                  className="font-bold text-on-surface truncate max-w-[150px]"
-                  title={subject}
-                >
-                  {subject || "—"}
-                </span>
-              </li>
-              <li className="flex justify-between items-center text-sm">
-                <span className="text-secondary font-medium">Messages</span>
-                <span className="font-bold text-on-surface px-2.5 py-0.5 bg-secondary-container text-primary rounded-md">
-                  {messages.length}
-                </span>
-              </li>
-            </ul>
-          </div>
-
-          <div className="mt-auto pt-8 pb-4 flex flex-col gap-3">
-            <button
-              onClick={() => window.print()}
-              disabled={messages.length === 0}
-              className="w-full px-4 py-3.5 rounded-xl border border-outline-variant/20 bg-surface-container-lowest text-primary font-bold text-sm hover:bg-primary-container hover:border-primary/20 hover:text-on-primary-container transition-all flex items-center justify-center gap-2 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <span className="material-symbols-outlined text-[18px]">
-                picture_as_pdf
-              </span>
-              Save as PDF
-            </button>
-            <button
-              onClick={() => {
-                resetSession();
-                setShowSidebar(false);
-              }}
-              className="w-full px-4 py-3.5 rounded-xl border border-outline-variant/20 bg-surface-container-lowest text-error font-bold text-sm hover:bg-error-container hover:border-error/20 hover:text-on-error-container transition-all flex items-center justify-center gap-2 shadow-sm"
-            >
-              <span className="material-symbols-outlined text-[18px]">
-                delete
-              </span>
-              Clear Session
-            </button>
-          </div>
-        </div>
+      {/* ── Input Area ── */}
+      <div className="bg-background px-4 md:px-6 pb-4 pt-3 shrink-0 print:hidden">
+        <form
+          onSubmit={handleSendMessage}
+          className="max-w-3xl mx-auto flex items-end gap-3 bg-surface-container-lowest dark:bg-surface-container rounded-2xl border border-outline-variant/30 shadow-lg focus-within:border-primary/50 focus-within:shadow-primary/10 focus-within:shadow-xl transition-all px-4 py-3"
+        >
+          <textarea
+            ref={inputRef}
+            rows={1}
+            className="flex-1 bg-transparent text-on-surface outline-none text-[15px] font-medium placeholder:text-outline/50 resize-none overflow-hidden leading-relaxed"
+            value={input}
+            onChange={handleInputChange}
+            onKeyDown={handleKeyDown}
+            placeholder={
+              !settings.apiKey
+                ? "API key required..."
+                : !bootstrapped
+                  ? "Configuring assistant..."
+                  : subject
+                    ? `Ask about ${subject}...`
+                    : "Select a semester and subject first..."
+            }
+            disabled={!settings.apiKey || !bootstrapped || chatLoading || !subject}
+            style={{ minHeight: "28px", maxHeight: "160px" }}
+          />
+          <button
+            type="submit"
+            disabled={!bootstrapped || !input.trim() || chatLoading || !subject}
+            className="w-9 h-9 bg-primary text-on-primary rounded-xl flex items-center justify-center disabled:opacity-30 disabled:cursor-not-allowed hover:bg-primary-hover active:scale-90 transition-all shrink-0 self-end"
+          >
+            <span className="material-symbols-outlined text-[20px]">send</span>
+          </button>
+        </form>
+        <p className="text-center text-[11px] text-outline/50 mt-2">
+          Enter to send · Shift+Enter for newline · Plexi may make mistakes
+        </p>
       </div>
     </div>
   );

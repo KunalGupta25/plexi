@@ -48,9 +48,9 @@ const Layout: React.FC = () => {
   const isActive = (path: string) => location.pathname === path;
 
   return (
-    <div className="bg-background text-on-surface selection:bg-primary-fixed selection:text-on-primary-fixed min-h-screen flex flex-col font-body antialiased">
+    <div className="bg-background text-on-surface selection:bg-primary-fixed selection:text-on-primary-fixed h-screen flex flex-col font-body antialiased overflow-hidden">
       {/* Desktop Navbar */}
-      <header className="hidden md:block print:hidden fixed top-0 w-full z-50 bg-background/60 backdrop-blur-xl border-b border-border/50">
+      <header className="hidden md:block print:hidden fixed top-0 w-full z-50 bg-surface-container-lowest dark:bg-surface-container border-b border-outline-variant/40">
         <nav className="flex justify-between items-center h-16 px-8 max-w-7xl mx-auto w-full">
           <div className="flex items-center gap-12">
             <Link
@@ -114,7 +114,7 @@ const Layout: React.FC = () => {
       </header>
 
       {/* Mobile Top Header */}
-      <header className="md:hidden print:hidden fixed top-0 w-full z-50 bg-background/60 backdrop-blur-xl border-b border-border/50 h-16 flex items-center justify-between px-6">
+      <header className="md:hidden print:hidden fixed top-0 w-full z-50 bg-surface-container-lowest dark:bg-surface-container border-b border-outline-variant/40 h-16 flex items-center justify-between px-6">
         <Link
           to="/"
           className="text-2xl font-black text-primary font-headline tracking-tighter"
@@ -130,7 +130,7 @@ const Layout: React.FC = () => {
       </header>
 
       {/* Mobile Floating Navbar */}
-      <nav className="md:hidden print:hidden fixed bottom-6 left-1/2 -translate-x-1/2 w-[92%] z-50 bg-surface-container-highest/80 backdrop-blur-xl border border-outline-variant/30 rounded-2xl shadow-2xl px-5 py-3 flex justify-between items-center">
+      <nav className="md:hidden print:hidden fixed bottom-6 left-1/2 -translate-x-1/2 w-[92%] z-50 bg-surface-container-lowest dark:bg-surface-container border border-outline-variant/40 rounded-2xl shadow-2xl px-5 py-3 flex justify-between items-center">
         <div className="flex items-center gap-5">
           <Link
             to="/"
@@ -182,11 +182,15 @@ const Layout: React.FC = () => {
       </nav>
 
       {/* Main Content Area */}
-      <main className="flex-grow pt-20 md:pt-24 pb-28 md:pb-16 px-4 md:px-8 w-full mx-auto max-w-[1600px] flex flex-col relative">
+      <main className={location.pathname === "/assistant"
+        ? "flex-1 w-full flex flex-col overflow-hidden"
+        : "flex-1 pt-20 md:pt-24 pb-28 md:pb-16 px-4 md:px-8 w-full mx-auto max-w-[1600px] flex flex-col relative overflow-auto"
+      }>
         <Outlet />
       </main>
 
-      {/* Footer */}
+      {/* Footer — hidden on Assistant page */}
+      {location.pathname !== "/assistant" && (
       <footer className="w-full py-8 px-4 md:px-8 border-t border-outline-variant/30 bg-surface-container-lowest print:hidden mb-20 md:mb-0">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-6">
           <div className="flex flex-col items-center md:items-start gap-2">
@@ -226,6 +230,7 @@ const Layout: React.FC = () => {
           </div>
         </div>
       </footer>
+      )}
 
       {/* Settings Modal */}
       {isSettingsOpen && (

@@ -57,6 +57,8 @@ const Hub: React.FC = () => {
   const [officeViewer, setOfficeViewer] = useState<"microsoft" | "google">(
     "microsoft",
   );
+  const [isExpanded, setIsExpanded] = useState(false);
+  const [showScrollTop, setShowScrollTop] = useState(false);
 
   // Sync state when URL changes (e.g. back button)
   useEffect(() => {
@@ -75,7 +77,10 @@ const Hub: React.FC = () => {
     [semester, subject, getMaterialTypes],
   );
   const files = useMemo(
-    () => getFiles(semester, subject, type),
+    () =>
+      [...getFiles(semester, subject, type)].sort((a, b) =>
+        a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: "base" })
+      ),
     [semester, subject, type, getFiles],
   );
 
@@ -213,6 +218,19 @@ const Hub: React.FC = () => {
     );
   };
 
+  // Track window scroll for scroll-to-top button
+  useEffect(() => {
+    const handleScroll = () => {
+      setShowScrollTop(window.scrollY > 400);
+    };
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[50vh]">
@@ -315,6 +333,7 @@ const Hub: React.FC = () => {
       </div>
 
       {/* Digital Curator (Desktop Only) */}
+      {!isExpanded && (
       <section className="hidden lg:flex flex-col gap-8 p-10 bg-surface-container-lowest rounded-[40px] border border-outline-variant/30 shadow-sm relative overflow-hidden animate-fade-in-up">
         <div className="absolute top-0 left-0 w-2 h-full bg-primary/20"></div>
         <div className="flex flex-col gap-2 relative">
@@ -424,10 +443,12 @@ const Hub: React.FC = () => {
           </div>
         </div>
       </section>
+      )}
 
       {/* Main Workspace */}
-      <div className="grid grid-cols-1 lg:grid-cols-[1fr_2fr] gap-6 md:gap-8 min-w-0">
+      <div className={`grid gap-6 md:gap-8 min-w-0 ${isExpanded ? "grid-cols-1" : "grid-cols-1 lg:grid-cols-[1fr_2fr]"}`}>
         {/* File List */}
+        {!isExpanded && (
         <section
           className={`bg-surface-container-lowest rounded-[2rem] border border-outline-variant/30 shadow-card p-6 flex flex-col gap-6 sticky top-24 lg:max-h-[calc(100vh-8rem)] min-h-0 min-w-0 animate-fade-in-up delay-200 ${selectedFile ? "hidden lg:flex" : "flex"}`}
         >
@@ -485,6 +506,7 @@ const Hub: React.FC = () => {
             </div>
           )}
         </section>
+        )}
 
         {/* Preview Surface */}
         <div
@@ -508,7 +530,7 @@ const Hub: React.FC = () => {
                       arrow_back
                     </span>
                   </button>
-                  <div className="flex flex-col min-w-0">
+                  <div className="flex flex-col min-w-0 flex-1">
                     <div className="lg:hidden flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60">
                       Material Preview
                     </div>
@@ -516,10 +538,24 @@ const Hub: React.FC = () => {
                       {formatFileName(selectedFile.name)}
                     </h3>
                   </div>
+                  {/* Expand / Collapse toggle */}
+                  <button
+                    onClick={() => setIsExpanded(!isExpanded)}
+                    className={`hidden lg:flex p-1.5 rounded-lg border transition-all shrink-0 ${
+                      isExpanded
+                        ? "bg-primary/15 border-primary/30 text-primary"
+                        : "bg-surface-container-high/60 border-outline-variant/30 text-on-surface-variant hover:text-primary hover:border-primary/30"
+                    }`}
+                    title={isExpanded ? "Exit expanded view" : "Expand preview"}
+                  >
+                    <span className="material-symbols-outlined text-[18px] block">
+                      {isExpanded ? "close_fullscreen" : "open_in_full"}
+                    </span>
+                  </button>
                 </div>
 
                 {/* Desktop Metadata */}
-                <div className="hidden lg:flex items-center justify-between gap-2 shrink-0">
+                  <div className="hidden lg:flex items-center justify-between gap-2 shrink-0">
                   <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-primary font-label">
                     <span className="material-symbols-outlined text-[16px]">visibility</span>
                     Preview Surface
@@ -562,6 +598,7 @@ const Hub: React.FC = () => {
                         <DocViewerComponent
                           document={preview.url}
                           filename={preview.filename}
+                          isExpanded={isExpanded}
                         />
                       </Suspense>
                     </div>
@@ -661,7 +698,19 @@ const Hub: React.FC = () => {
           </section>
         </div>
       </div>
-    </div>
+
+    {/* Scroll to top FAB */}
+    {showScrollTop && (
+      <button
+        onClick={scrollToTop}
+        className="fixed bottom-28 md:bottom-8 right-8 z-50 p-3 bg-primary text-on-primary rounded-full shadow-xl hover:shadow-2xl hover:scale-110 transition-all duration-300 animate-fade-in-up"
+        title="Scroll to top"
+        aria-label="Scroll to top"
+      >
+        <span className="material-symbols-outlined text-[22px] block">keyboard_arrow_up</span>
+      </button>
+    )}
+  </div>
   );
 };
 
