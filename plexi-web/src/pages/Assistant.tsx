@@ -640,7 +640,7 @@ Respond to the student's message using the rules above.`;
       </div>
 
       {/* ── Input Area ── */}
-      <div className="bg-background px-4 md:px-6 pb-4 pt-3 shrink-0 print:hidden">
+      <div className="bg-background px-4 md:px-6 pb-28 md:pb-4 pt-3 shrink-0 print:hidden">
         <form
           onSubmit={handleSendMessage}
           className="max-w-3xl mx-auto flex items-end gap-3 bg-surface-container-lowest dark:bg-surface-container rounded-2xl border border-outline-variant/30 shadow-lg focus-within:border-primary/50 focus-within:shadow-primary/10 focus-within:shadow-xl transition-all px-4 py-3"

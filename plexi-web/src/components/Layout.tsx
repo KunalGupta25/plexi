@@ -49,7 +49,7 @@ const Layout: React.FC = () => {
 
   return (
     <div className={`bg-background text-on-surface selection:bg-primary-fixed selection:text-on-primary-fixed flex flex-col font-body antialiased ${
-      location.pathname === "/assistant" ? "h-screen overflow-hidden" : "min-h-screen"
+      location.pathname === "/assistant" ? "h-[100dvh] overflow-hidden" : "min-h-screen"
     }`}>
       {/* Desktop Navbar */}
       <header className="hidden md:block print:hidden fixed top-0 w-full z-50 bg-surface-container-lowest dark:bg-surface-container border-b border-outline-variant/40">
