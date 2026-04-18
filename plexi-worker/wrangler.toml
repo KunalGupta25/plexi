@@ -6,7 +6,7 @@ compatibility_date = "2024-12-01"
 [vars]
 HF_API_URL = "https://lazyhuman-plexi-api.hf.space"
 # The Cloudflare Pages frontend origin (used in CORS + cache key namespacing)
-FRONTEND_ORIGIN = "https://plexi.cosmeta.tech"
+FRONTEND_ORIGIN = "https://plexi.lazygod.workers.dev"
 
 # Create with: wrangler kv namespace create PLEXI_CACHE
 # Then paste the returned id below.
