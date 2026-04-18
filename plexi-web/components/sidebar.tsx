@@ -10,7 +10,7 @@ import {
   BookOpen, 
   Bot, 
   Puzzle, 
-  Settings,
+  NotebookPen,
   Menu,
   X,
   ChevronLeft,
@@ -37,6 +37,7 @@ const mainNavLinks = [
 
 const secondaryNavLinks = [
   { href: "/integrations", label: "Integrations", icon: Puzzle },
+  { href: "/blogs", label: "Blog & Guides", icon: NotebookPen },
 ]
 
 export function Sidebar() {

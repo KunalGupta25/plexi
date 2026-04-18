@@ -16,6 +16,7 @@ import {
   Loader2,
   AlertCircle,
   Download,
+  ExternalLink,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -73,6 +74,7 @@ const providers = [
       "gemini-2.0-flash-lite",
     ],
     requiresApiKey: true,
+    apiKeyUrl: "https://aistudio.google.com/apikey",
   },
   {
     id: "openai",
@@ -80,6 +82,7 @@ const providers = [
     endpoint: "https://api.openai.com/v1",
     models: ["gpt-4.1", "gpt-4.1-mini", "gpt-4.1-nano", "gpt-4o", "gpt-4o-mini"],
     requiresApiKey: true,
+    apiKeyUrl: "https://platform.openai.com/api-keys",
   },
   {
     id: "anthropic",
@@ -91,6 +94,7 @@ const providers = [
       "claude-3-5-haiku-20241022",
     ],
     requiresApiKey: true,
+    apiKeyUrl: "https://console.anthropic.com/settings/keys",
   },
   {
     id: "groq",
@@ -103,6 +107,7 @@ const providers = [
       "gemma2-9b-it",
     ],
     requiresApiKey: true,
+    apiKeyUrl: "https://console.groq.com/keys",
   },
   {
     id: "mistral",
@@ -115,6 +120,7 @@ const providers = [
       "open-mistral-nemo",
     ],
     requiresApiKey: true,
+    apiKeyUrl: "https://console.mistral.ai/api-keys",
   },
   {
     id: "openrouter",
@@ -131,6 +137,7 @@ const providers = [
       "mistralai/mistral-7b-instruct:free",
     ],
     requiresApiKey: true,
+    apiKeyUrl: "https://openrouter.ai/settings/keys",
   },
   {
     id: "custom",
@@ -425,7 +432,16 @@ export default function AIPage() {
             </DialogTitle>
             <DialogDescription>
               Configure your AI provider to get started with intelligent study
-              assistance. Your API key is only sent to the provider.
+              assistance. Your API key is only sent to the provider.{" "}
+              <a
+                href="https://www.notion.so/lazyhuman/How-to-use-Plexi-Assistant-339e3502f091806b98e8d850706ebd47"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-0.5 underline underline-offset-2"
+              >
+                Need help? Read the guide
+                <ExternalLink className="h-3 w-3" />
+              </a>
             </DialogDescription>
           </DialogHeader>
 
@@ -552,6 +568,20 @@ export default function AIPage() {
                 {selectedProviderId === "custom"
                   ? "Optional - leave empty if your local model doesn't require authentication."
                   : "Your API key is never stored on our servers."}
+                {selectedProvider?.apiKeyUrl && (
+                  <>
+                    {" "}·{" "}
+                    <a
+                      href={selectedProvider.apiKeyUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-0.5 underline underline-offset-2"
+                    >
+                      Get API key
+                      <ExternalLink className="h-3 w-3" />
+                    </a>
+                  </>
+                )}
               </p>
             </div>
 
