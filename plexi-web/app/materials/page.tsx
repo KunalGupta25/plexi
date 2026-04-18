@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, Suspense } from "react"
 import { useSearchParams } from "next/navigation"
 import { 
   FileText,
@@ -34,7 +34,7 @@ import {
   getFileUrl 
 } from "@/lib/api"
 
-export default function MaterialsPage() {
+function MaterialsContent() {
   const searchParams = useSearchParams()
   const { data: manifest, isLoading, error } = useManifest()
   
@@ -318,5 +318,18 @@ export default function MaterialsPage() {
         )}
       </div>
     </div>
+  )
+}
+
+export default function MaterialsPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex min-h-[50vh] flex-col items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        <p className="mt-4 text-muted-foreground">Loading...</p>
+      </div>
+    }>
+      <MaterialsContent />
+    </Suspense>
   )
 }
