@@ -8,7 +8,7 @@ import type {
   Manifest 
 } from './types';
 
-const API_BASE = process.env.NEXT_PUBLIC_WORKER_URL || 'https://plexi-worker.lazygod.workers.dev';
+const API_BASE = process.env.NEXT_PUBLIC_WORKER_URL || 'https://plexi-worker.mexus.tech';
 
 class PlexiAPIError extends Error {
   constructor(public status: number, message: string) {
