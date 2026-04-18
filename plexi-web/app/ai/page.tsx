@@ -746,7 +746,7 @@ export default function AIPage() {
                     : "bg-primary text-primary-foreground",
                 )}
               >
-                <div className="text-sm prose prose-sm dark:prose-invert max-w-none prose-p:my-1 prose-headings:my-2 prose-ul:my-1 prose-ol:my-1 prose-li:my-0 prose-pre:my-2 prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-code:bg-muted prose-code:before:content-none prose-code:after:content-none">
+                <div className="text-sm prose prose-sm prose-neutral dark:prose-invert max-w-none prose-p:my-1 prose-headings:my-2 prose-headings:font-semibold prose-ul:my-1 prose-ol:my-1 prose-li:my-0.5 prose-pre:my-2 prose-pre:bg-muted prose-pre:text-foreground prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-code:bg-muted prose-code:text-foreground prose-code:before:content-none prose-code:after:content-none prose-table:text-xs prose-th:py-1.5 prose-td:py-1.5 prose-a:text-primary prose-strong:text-foreground prose-blockquote:border-primary/50">
                   {message.role === "assistant" ? (
                     <>
                       <ReactMarkdown remarkPlugins={[remarkGfm]}>
