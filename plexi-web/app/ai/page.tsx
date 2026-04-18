@@ -746,7 +746,10 @@ export default function AIPage() {
                     : "bg-primary text-primary-foreground",
                 )}
               >
-                <div className="text-sm prose prose-sm dark:prose-invert max-w-none prose-p:my-1 prose-headings:my-2 prose-ul:my-1 prose-ol:my-1 prose-li:my-0 prose-pre:my-2 prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-code:bg-muted prose-code:before:content-none prose-code:after:content-none">
+                <div className={cn(
+                  "text-sm max-w-none",
+                  message.role === "assistant" && "prose prose-sm dark:prose-invert prose-p:my-1 prose-headings:my-2 prose-ul:my-1 prose-ol:my-1 prose-li:my-0 prose-pre:my-2 prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-code:bg-muted prose-code:before:content-none prose-code:after:content-none"
+                )}>
                   {message.role === "assistant" ? (
                     <>
                       <ReactMarkdown remarkPlugins={[remarkGfm]}>
