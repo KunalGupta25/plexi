@@ -12,7 +12,8 @@ import { Env } from "./types";
 /** Build the allowed origins whitelist from the configured FRONTEND_ORIGIN. */
 function getAllowedOrigins(env: Env): string[] {
   return [
-    env.FRONTEND_ORIGIN,
+    env.FRONTEND_ORIGIN || "https://plexi.lazygod.workers.dev",
+    "https://plexi.lazygod.workers.dev",
     "http://localhost:5173",
     "http://localhost:4173",
     "http://127.0.0.1:5173",
@@ -22,7 +23,7 @@ function getAllowedOrigins(env: Env): string[] {
 /** Validate the request Origin against the whitelist. Returns the origin if valid, null otherwise. */
 function getValidatedOrigin(request: Request, env: Env): string | null {
   const origin = request.headers.get("Origin");
-  if (!origin) return env.FRONTEND_ORIGIN; // Same-origin or non-browser requests
+  if (!origin) return env.FRONTEND_ORIGIN || "https://plexi.lazygod.workers.dev"; // Same-origin or non-browser requests
   const allowed = getAllowedOrigins(env);
   return allowed.includes(origin) ? origin : null;
 }

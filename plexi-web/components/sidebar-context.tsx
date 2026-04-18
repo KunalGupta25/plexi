@@ -1,5 +1,6 @@
 'use client'
 
+import { usePathname } from 'next/navigation'
 import { createContext, useContext, useState, ReactNode } from 'react'
 
 interface SidebarContextType {
@@ -10,7 +11,8 @@ interface SidebarContextType {
 const SidebarContext = createContext<SidebarContextType | undefined>(undefined)
 
 export function SidebarProvider({ children }: { children: ReactNode }) {
-  const [collapsed, setCollapsed] = useState(false)
+  const pathname = usePathname()
+  const [collapsed, setCollapsed] = useState(() => pathname === '/')
 
   return (
     <SidebarContext.Provider value={{ collapsed, setCollapsed }}>
