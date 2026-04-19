@@ -604,12 +604,12 @@ export function PDFViewer({ url, filename = "Document", className, isMobile = fa
       const tag = (e.target as HTMLElement)?.tagName?.toLowerCase()
       if (tag === "input" || tag === "textarea" || tag === "select") return
 
-      if (e.key === "ArrowLeft" || e.key === "ArrowUp") {
+      if (e.key === "ArrowLeft") {
         if (viewMode === "single") {
           e.preventDefault()
           setCurrentPage((p) => Math.max(1, p - 1))
         }
-      } else if (e.key === "ArrowRight" || e.key === "ArrowDown") {
+      } else if (e.key === "ArrowRight") {
         if (viewMode === "single") {
           e.preventDefault()
           setCurrentPage((p) => Math.min(numPages, p + 1))
