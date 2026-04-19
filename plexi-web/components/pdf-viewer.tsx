@@ -597,6 +597,36 @@ export function PDFViewer({ url, filename = "Document", className, isMobile = fa
     }
   }
 
+  // Keyboard navigation: Arrow keys to change pages
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Don't intercept when typing in an input, textarea, or select
+      const tag = (e.target as HTMLElement)?.tagName?.toLowerCase()
+      if (tag === "input" || tag === "textarea" || tag === "select") return
+
+      if (e.key === "ArrowLeft" || e.key === "ArrowUp") {
+        if (viewMode === "single") {
+          e.preventDefault()
+          setCurrentPage((p) => Math.max(1, p - 1))
+        }
+      } else if (e.key === "ArrowRight" || e.key === "ArrowDown") {
+        if (viewMode === "single") {
+          e.preventDefault()
+          setCurrentPage((p) => Math.min(numPages, p + 1))
+        }
+      } else if (e.key === "+" || e.key === "=") {
+        e.preventDefault()
+        setScale((s) => Math.min(3, s + 0.25))
+      } else if (e.key === "-" || e.key === "_") {
+        e.preventDefault()
+        setScale((s) => Math.max(0.5, s - 0.25))
+      }
+    }
+
+    window.addEventListener("keydown", handleKeyDown)
+    return () => window.removeEventListener("keydown", handleKeyDown)
+  }, [viewMode, numPages])
+
   useEffect(() => {
     const handleFullscreenChange = () => {
       setIsFullscreen(!!document.fullscreenElement)
