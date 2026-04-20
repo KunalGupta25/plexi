@@ -23,6 +23,8 @@ import {
   FileText,
   Share2,
   Check,
+  ExternalLink,
+  MessageSquare,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -873,19 +875,70 @@ export function PDFViewer({
             {shareData && (
               <>
                 <div className="w-px h-6 bg-border mx-1" />
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-8 w-8"
-                  onClick={handleShare}
-                  title="Share link"
-                >
-                  {showCopied ? (
-                    <Check className="h-4 w-4 text-green-500" />
-                  ) : (
-                    <Share2 className="h-4 w-4" />
-                  )}
-                </Button>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8"
+                      title="Share"
+                    >
+                      <Share2 className="h-4 w-4" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-64 p-2" align="end">
+                    <div className="flex flex-col gap-1">
+                      <Button
+                        variant="ghost"
+                        className="w-full justify-start text-xs h-9 px-2"
+                        onClick={handleShare}
+                      >
+                        {showCopied ? (
+                          <>
+                            <Check className="h-3.5 w-3.5 mr-2 text-green-500" />
+                            Copied!
+                          </>
+                        ) : (
+                          <>
+                            <Share2 className="h-3.5 w-3.5 mr-2" />
+                            Copy shareable link
+                          </>
+                        )}
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        className="w-full justify-start text-xs h-9 px-2"
+                        onClick={() => {
+                          const prompt = encodeURIComponent(
+                            `help me study ${shareData.fileName} from ${shareData.subject} in ${shareData.semester}`,
+                          );
+                          window.open(
+                            `https://chatgpt.com/g/g-69caa671910481919ce71d19952e34e5-plexi?prompt=${prompt}`,
+                            "_blank",
+                          );
+                        }}
+                      >
+                        <ExternalLink className="h-3.5 w-3.5 mr-2" />
+                        Share with ChatGPT
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        className="w-full justify-start text-xs h-9 px-2"
+                        onClick={() => {
+                          const params = new URLSearchParams({
+                            prompt: `help me study ${shareData.fileName} from ${shareData.subject} in ${shareData.semester}`,
+                            semester: shareData.semester,
+                            subject: shareData.subject,
+                          });
+                          window.open(`/ai?${params.toString()}`, "_blank");
+                        }}
+                      >
+                        <MessageSquare className="h-3.5 w-3.5 mr-2" />
+                        Ask to Plexi AI
+                      </Button>
+                    </div>
+                  </PopoverContent>
+                </Popover>
               </>
             )}
           </div>

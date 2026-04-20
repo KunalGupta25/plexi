@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect, useCallback, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
@@ -274,7 +275,22 @@ Friendly, clear, confident. Talk like a smart friend who's great at explaining C
 Students are cramming - respect their time. Be concise but complete.`;
 
 export default function AIPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex h-full items-center justify-center">
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        </div>
+      }
+    >
+      <AIChatContent />
+    </Suspense>
+  );
+}
+
+function AIChatContent() {
   const { data: manifest } = useManifest();
+  const searchParams = useSearchParams();
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
       id: "1",
@@ -334,7 +350,21 @@ export default function AIPage() {
         // Ignore parse errors
       }
     }
-  }, []);
+
+    // Handle URL parameters for pre-filling prompt and scope
+    const promptParam = searchParams.get("prompt");
+    const semesterParam = searchParams.get("semester");
+    const subjectParam = searchParams.get("subject");
+
+    if (promptParam) {
+      setInput(promptParam);
+    }
+    if (semesterParam && subjectParam) {
+      setScopeConfig({ semester: semesterParam, subject: subjectParam });
+      setIsConfigured(true);
+      setShowScopeModal(false);
+    }
+  }, [searchParams]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
