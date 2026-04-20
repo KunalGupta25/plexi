@@ -1,5 +1,5 @@
-@import 'tailwindcss';
-@import 'tw-animate-css';
+@import "tailwindcss";
+@import "tw-animate-css";
 @plugin '@tailwindcss/typography';
 
 @custom-variant dark (&:is(.dark *));
@@ -78,8 +78,8 @@
 }
 
 @theme inline {
-  --font-sans: 'Geist', 'Geist Fallback', system-ui, sans-serif;
-  --font-mono: 'Geist Mono', 'Geist Mono Fallback', monospace;
+  --font-sans: "Geist", "Geist Fallback", system-ui, sans-serif;
+  --font-mono: "Geist Mono", "Geist Mono Fallback", monospace;
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -189,4 +189,59 @@
 
 .dark ::-webkit-scrollbar-thumb:hover {
   background: oklch(0.45 0 0);
+}
+
+/* Print styles for PDF export */
+@media print {
+  /* Hide UI elements */
+  nav,
+  aside,
+  header,
+  button,
+  .no-print,
+  [role="dialog"],
+  .border-b.border-border.bg-card.px-4.py-3, /* Chat header */
+  .fixed.bottom-0.left-0.right-0, /* Input area container */
+  .pb-32 /* Extra padding at bottom */ {
+    display: none !important;
+  }
+
+  /* Reset layout for print */
+  body,
+  html {
+    background: white !important;
+    color: black !important;
+    height: auto !important;
+    overflow: visible !important;
+  }
+
+  main {
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+  }
+
+  /* Chat specific adjustments */
+  .flex-1.overflow-y-auto {
+    overflow: visible !important;
+    height: auto !important;
+  }
+
+  /* Ensure messages aren't cut off */
+  .mx-auto.max-w-4xl.space-y-6 {
+    max-width: 100% !important;
+    padding: 1rem !important;
+  }
+
+  /* Clean up message boxes for print */
+  .rounded-2xl {
+    border: 1px solid #eee !important;
+    box-shadow: none !important;
+  }
+
+  /* Force colors in print if possible */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
 }

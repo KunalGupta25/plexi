@@ -39,6 +39,12 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Checkbox } from "@/components/ui/checkbox";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 import {
   retrieve,
@@ -362,7 +368,15 @@ function AIChatContent() {
     if (semesterParam && subjectParam) {
       setScopeConfig({ semester: semesterParam, subject: subjectParam });
       setIsConfigured(true);
+      setShowSetupModal(false);
       setShowScopeModal(false);
+      setMessages([
+        {
+          id: "1",
+          role: "assistant",
+          content: `Great! I'm now configured to help you with **${subjectParam}** from **${semesterParam}**. Ask me anything about your study materials!`,
+        },
+      ]);
     }
   }, [searchParams]);
 
@@ -423,7 +437,12 @@ function AIChatContent() {
     }
   };
 
-  const handleDownloadChat = () => {
+  const handleDownloadChat = (format: "md" | "pdf" = "md") => {
+    if (format === "pdf") {
+      window.print();
+      return;
+    }
+
     // Create markdown content
     let mdContent = `# Plexi AI Chat History\n\n`;
     mdContent += `**${scopeConfig.semester} - ${scopeConfig.subject}**\n`;
@@ -841,22 +860,37 @@ function AIChatContent() {
               <h1 className="font-semibold">Plexi AI</h1>
               <p className="text-xs text-muted-foreground">
                 {isConfigured
-                  ? `${scopeConfig.semester} Ãƒâ€šÃ‚Â· ${scopeConfig.subject}`
+                  ? `${scopeConfig.semester} • ${scopeConfig.subject}`
                   : "Not configured"}
               </p>
             </div>
           </div>
           <div className="flex items-center gap-2">
             {isConfigured && messages.length > 1 && (
-              <Button
-                variant="outline"
-                size="sm"
-                className="rounded-xl"
-                onClick={handleDownloadChat}
-              >
-                <Download className="mr-2 h-4 w-4" />
-                <span className="hidden sm:inline">Export</span>
-              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm" className="rounded-xl">
+                    <Download className="mr-2 h-4 w-4" />
+                    <span className="hidden sm:inline">Export</span>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="rounded-xl">
+                  <DropdownMenuItem
+                    onClick={() => handleDownloadChat("md")}
+                    className="cursor-pointer"
+                  >
+                    <FileText className="mr-2 h-4 w-4" />
+                    Export as Markdown
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => handleDownloadChat("pdf")}
+                    className="cursor-pointer"
+                  >
+                    <Bot className="mr-2 h-4 w-4" />
+                    Download as PDF
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             )}
             <Button
               variant="outline"
