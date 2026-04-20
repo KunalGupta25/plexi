@@ -51,48 +51,85 @@ export async function chat(request: ChatRequest): Promise<ChatResponse> {
   return handleResponse<ChatResponse>(response);
 }
 
+/**
+ * Stream chat tokens directly from the LLM provider.
+ *
+ * We call the provider's /chat/completions endpoint directly from the browser
+ * (bypassing the Cloudflare Worker) so that SSE arrives in real-time without
+ * an extra proxy hop. All listed providers (OpenAI, Groq, Gemini, Mistral,
+ * OpenRouter) accept CORS requests from the browser with a Bearer token.
+ */
 export async function* chatStream(request: ChatRequest): AsyncGenerator<string, void, unknown> {
-  const response = await fetch(`${API_BASE}/api/chat/stream`, {
+  const { endpoint, apiKey, model, messages } = request;
+
+  if (!endpoint || !model) {
+    throw new PlexiAPIError(400, 'endpoint and model are required for streaming.');
+  }
+
+  const normalizedEndpoint = endpoint.replace(/\/$/, '');
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+  };
+  if (apiKey) {
+    headers['Authorization'] = `Bearer ${apiKey}`;
+  }
+
+  const response = await fetch(`${normalizedEndpoint}/chat/completions`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(request),
+    headers,
+    body: JSON.stringify({
+      model,
+      messages,
+      temperature: 0.3,
+      stream: true,
+    }),
   });
 
   if (!response.ok) {
-    const error = await response.json().catch(() => ({ error: response.statusText }));
-    throw new PlexiAPIError(response.status, (error as { error?: string }).error || 'Unknown error');
+    // Try to extract a meaningful error from the provider
+    let message = response.statusText;
+    try {
+      const errBody = await response.json() as { error?: { message?: string } | string };
+      if (typeof errBody.error === 'string') message = errBody.error;
+      else if (errBody.error?.message) message = errBody.error.message;
+    } catch { /* ignore */ }
+    throw new PlexiAPIError(response.status, message);
   }
 
   if (!response.body) {
-    throw new PlexiAPIError(500, 'No response body');
+    throw new PlexiAPIError(500, 'No response body from LLM provider.');
   }
 
   const reader = response.body.getReader();
   const decoder = new TextDecoder();
   let buffer = '';
 
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) break;
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
 
-    buffer += decoder.decode(value, { stream: true });
-    const lines = buffer.split('\n');
-    buffer = lines.pop() || '';
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n');
+      buffer = lines.pop() || '';
 
-    for (const line of lines) {
-      const trimmed = line.trim();
-      if (!trimmed || trimmed === 'data: [DONE]') continue;
-      
-      if (trimmed.startsWith('data: ')) {
-        try {
-          const json = JSON.parse(trimmed.slice(6));
-          const content = json.choices?.[0]?.delta?.content;
-          if (content) yield content;
-        } catch {
-          // Ignore parse errors
+      for (const line of lines) {
+        const trimmed = line.trim();
+        if (!trimmed || trimmed === 'data: [DONE]') continue;
+
+        if (trimmed.startsWith('data: ')) {
+          try {
+            const json = JSON.parse(trimmed.slice(6));
+            const content = json.choices?.[0]?.delta?.content;
+            if (content) yield content;
+          } catch {
+            // Ignore individual chunk parse errors
+          }
         }
       }
     }
+  } finally {
+    reader.releaseLock();
   }
 }
 

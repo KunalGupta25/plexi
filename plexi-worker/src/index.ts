@@ -72,7 +72,7 @@ export default {
   async fetch(
     request: Request,
     env: Env,
-    _ctx: ExecutionContext,
+    ctx: ExecutionContext,
   ): Promise<Response> {
     // Pre-flight CORS
     if (request.method === "OPTIONS") {
@@ -88,7 +88,7 @@ export default {
     if (path === "/api/retrieve" && request.method === "POST") {
       response = await handleRetrieve(request, env);
     } else if (path === "/api/chat/stream" && request.method === "POST") {
-      response = await handleChatStream(request, env);
+      response = await handleChatStream(request, env, ctx);
     } else if (path === "/api/chat" && request.method === "POST") {
       response = await handleChat(request, env);
     } else if (path === "/api/manifest" && request.method === "GET") {

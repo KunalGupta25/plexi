@@ -102,7 +102,7 @@ export async function handleChat(request: Request, env: Env): Promise<Response> 
 
 // ── Streaming chat handler ──────────────────────────────────────────────────
 
-export async function handleChatStream(request: Request, env: Env): Promise<Response> {
+export async function handleChatStream(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
   const ip = request.headers.get('CF-Connecting-IP') ?? 'unknown';
   const allowed = await checkRateLimit(ip, env);
   if (!allowed) {
@@ -201,53 +201,56 @@ export async function handleChatStream(request: Request, env: Env): Promise<Resp
   const writer = writable.getWriter();
   const reader = llmRes.body.getReader();
 
-  // Process stream in background
-  (async () => {
-    try {
-      let buffer = '';
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
+  // Register the background pipe with waitUntil so CF doesn't kill the worker
+  // before the SSE pipe and post-stream cache write are complete.
+  ctx.waitUntil(
+    (async () => {
+      try {
+        let buffer = '';
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
 
-        buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split('\n');
-        buffer = lines.pop() ?? '';
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split('\n');
+          buffer = lines.pop() ?? '';
 
-        for (const line of lines) {
-          const trimmed = line.trim();
-          if (!trimmed) continue;
+          for (const line of lines) {
+            const trimmed = line.trim();
+            if (!trimmed) continue;
 
-          // Forward the line as-is to the client
-          await writer.write(encoder.encode(trimmed + '\n\n'));
+            // Forward the line as-is to the client
+            await writer.write(encoder.encode(trimmed + '\n\n'));
 
-          // Extract content for caching
-          if (trimmed.startsWith('data: ') && trimmed !== 'data: [DONE]') {
-            try {
-              const json = JSON.parse(trimmed.slice(6));
-              const content = json.choices?.[0]?.delta?.content;
-              if (content) fullAnswer += content;
-            } catch {
-              // ignore parse errors on individual chunks
+            // Extract content for caching
+            if (trimmed.startsWith('data: ') && trimmed !== 'data: [DONE]') {
+              try {
+                const json = JSON.parse(trimmed.slice(6));
+                const content = json.choices?.[0]?.delta?.content;
+                if (content) fullAnswer += content;
+              } catch {
+                // ignore parse errors on individual chunks
+              }
             }
           }
         }
-      }
 
-      // Flush remaining buffer
-      if (buffer.trim()) {
-        await writer.write(encoder.encode(buffer.trim() + '\n\n'));
-      }
-    } catch (err) {
-      console.error('Stream processing error:', err);
-    } finally {
-      await writer.close();
+        // Flush remaining buffer
+        if (buffer.trim()) {
+          await writer.write(encoder.encode(buffer.trim() + '\n\n'));
+        }
+      } catch (err) {
+        console.error('Stream processing error:', err);
+      } finally {
+        await writer.close();
 
-      // Cache the full answer after stream completes
-      if (saveKey && fullAnswer) {
-        await env.PLEXI_CACHE.put(saveKey, fullAnswer, { expirationTtl: ANSWER_TTL }).catch(() => {});
+        // Cache the full answer after stream completes
+        if (saveKey && fullAnswer) {
+          await env.PLEXI_CACHE.put(saveKey, fullAnswer, { expirationTtl: ANSWER_TTL }).catch(() => {});
+        }
       }
-    }
-  })();
+    })()
+  );
 
   return new Response(readable, {
     status: 200,
