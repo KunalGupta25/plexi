@@ -25,6 +25,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { PDFViewer } from "@/components/pdf-viewer"
+import { saveRecentFile } from "@/lib/recent-files"
 import { 
   useManifest, 
   useSemesters, 
@@ -114,6 +115,18 @@ function MaterialsContent() {
 
   // Check if file is PDF
   const isPDF = selectedFile?.name.toLowerCase().endsWith('.pdf')
+
+  useEffect(() => {
+    if (!semester || !subject || !fileType || !selectedFile) return
+
+    saveRecentFile({
+      name: selectedFile.name,
+      url: selectedFile.url,
+      semester,
+      subject,
+      fileType,
+    })
+  }, [semester, subject, fileType, selectedFile])
 
   // Document viewer component
   const DocumentViewer = ({ className = "", isMobile = false }: { className?: string; isMobile?: boolean }) => {

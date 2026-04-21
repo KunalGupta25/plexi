@@ -1,75 +1,93 @@
-"use client"
+"use client";
 
-import Link from "next/link"
-import { usePathname } from "next/navigation"
-import { 
-  Moon, 
-  Sun, 
-  Sparkles, 
-  Home, 
-  BookOpen, 
-  Bot, 
-  Puzzle, 
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import {
+  Moon,
+  Sun,
+  Sparkles,
+  Home,
+  BookOpen,
+  Bot,
+  Puzzle,
   NotebookPen,
   Menu,
   X,
   ChevronLeft,
-  ChevronRight
-} from "lucide-react"
-import { useTheme } from "next-themes"
-import { useState, useEffect } from "react"
-import { Button } from "@/components/ui/button"
-import { cn } from "@/lib/utils"
-import { useSidebar } from "@/components/sidebar-context"
+  ChevronRight,
+} from "lucide-react";
+import { useTheme } from "next-themes";
+import { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+import { useSidebar } from "@/components/sidebar-context";
+import { useIsMobile } from "@/hooks/use-mobile";
 import {
   Sheet,
   SheetContent,
   SheetHeader,
   SheetTitle,
   SheetTrigger,
-} from "@/components/ui/sheet"
+} from "@/components/ui/sheet";
 
 const mainNavLinks = [
-  { href: "/", label: "Home", icon: Home },
+  { href: "/", label: "Home", icon: Home, mobileHref: "/home" },
   { href: "/materials", label: "Materials", icon: BookOpen },
   { href: "/ai", label: "Plexi AI", icon: Bot },
-]
+];
 
 const secondaryNavLinks = [
   { href: "/integrations", label: "Integrations", icon: Puzzle },
   { href: "/blogs", label: "Blog & Guides", icon: NotebookPen },
-]
+];
 
 export function Sidebar() {
-  const pathname = usePathname()
-  const { theme, setTheme } = useTheme()
-  const [mounted, setMounted] = useState(false)
-  const { collapsed, setCollapsed } = useSidebar()
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const pathname = usePathname();
+  const { theme, setTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+  const { collapsed, setCollapsed } = useSidebar();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const isMobile = useIsMobile();
 
   useEffect(() => {
-    setMounted(true)
-  }, [])
+    setMounted(true);
+  }, []);
 
-  const allLinks = [...mainNavLinks, ...secondaryNavLinks]
+  if (pathname === "/splash") return null;
+
+  const allLinks = [...mainNavLinks, ...secondaryNavLinks];
 
   return (
     <>
       {/* Desktop Vertical Sidebar */}
-      <aside 
+      <aside
         className={cn(
           "fixed left-0 top-0 z-40 hidden h-screen flex-col border-r border-border bg-background transition-all duration-300 md:flex",
-          collapsed ? "w-16" : "w-64"
+          collapsed ? "w-16" : "w-64",
         )}
       >
         {/* Logo */}
-        <div className={cn(
-          "flex h-16 items-center border-b border-border px-4",
-          collapsed ? "justify-center" : "justify-between"
-        )}>
+        <div
+          className={cn(
+            "flex h-16 items-center border-b border-border px-4",
+            collapsed ? "justify-center" : "justify-between",
+          )}
+        >
           <Link href="/" className="flex items-center gap-2">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary">
-              <Sparkles className="h-5 w-5 text-primary-foreground" />
+            <div className="flex h-10 w-10 items-center justify-center overflow-hidden">
+              {mounted && (
+                <img
+                  src={
+                    theme === "dark" ||
+                    (theme === "system" &&
+                      window.matchMedia("(prefers-color-scheme: dark)").matches)
+                      ? "/icon-dark.svg"
+                      : "/icon-light.svg"
+                  }
+                  alt="Plexi Logo"
+                  className="h-full w-full object-contain"
+                />
+              )}
             </div>
             {!collapsed && (
               <span className="text-xl font-bold tracking-tight">Plexi</span>
@@ -96,8 +114,8 @@ export function Sidebar() {
               </span>
             )}
             {mainNavLinks.map((link) => {
-              const Icon = link.icon
-              const isActive = pathname === link.href
+              const Icon = link.icon;
+              const isActive = pathname === link.href;
               return (
                 <Link
                   key={link.href}
@@ -107,14 +125,14 @@ export function Sidebar() {
                     collapsed && "justify-center px-2",
                     isActive
                       ? "bg-primary text-primary-foreground"
-                      : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+                      : "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
                   )}
                   title={collapsed ? link.label : undefined}
                 >
                   <Icon className="h-5 w-5 shrink-0" />
                   {!collapsed && <span>{link.label}</span>}
                 </Link>
-              )
+              );
             })}
           </div>
 
@@ -125,8 +143,8 @@ export function Sidebar() {
               </span>
             )}
             {secondaryNavLinks.map((link) => {
-              const Icon = link.icon
-              const isActive = pathname === link.href
+              const Icon = link.icon;
+              const isActive = pathname === link.href;
               return (
                 <Link
                   key={link.href}
@@ -136,14 +154,14 @@ export function Sidebar() {
                     collapsed && "justify-center px-2",
                     isActive
                       ? "bg-primary text-primary-foreground"
-                      : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+                      : "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
                   )}
                   title={collapsed ? link.label : undefined}
                 >
                   <Icon className="h-5 w-5 shrink-0" />
                   {!collapsed && <span>{link.label}</span>}
                 </Link>
-              )
+              );
             })}
           </div>
         </nav>
@@ -166,7 +184,7 @@ export function Sidebar() {
               onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
               className={cn(
                 "w-full justify-start gap-3 rounded-xl",
-                collapsed && "justify-center px-2"
+                collapsed && "justify-center px-2",
               )}
             >
               {theme === "dark" ? (
@@ -185,8 +203,20 @@ export function Sidebar() {
         <nav className="flex h-14 items-center justify-between px-4">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
-              <Sparkles className="h-5 w-5 text-primary-foreground" />
+            <div className="flex h-9 w-9 items-center justify-center overflow-hidden">
+              {mounted && (
+                <img
+                  src={
+                    theme === "dark" ||
+                    (theme === "system" &&
+                      window.matchMedia("(prefers-color-scheme: dark)").matches)
+                      ? "/icon-dark.svg"
+                      : "/icon-light.svg"
+                  }
+                  alt="Plexi Logo"
+                  className="h-full w-full object-contain"
+                />
+              )}
             </div>
             <span className="text-lg font-bold tracking-tight">Plexi</span>
           </Link>
@@ -217,32 +247,39 @@ export function Sidebar() {
         <div className="mx-auto flex h-16 max-w-md items-center justify-around px-2 pb-safe">
           {/* Main Navigation Items */}
           {mainNavLinks.map((link) => {
-            const Icon = link.icon
-            const isActive = pathname === link.href
+            const Icon = link.icon;
+            const href =
+              isMobile && link.mobileHref ? link.mobileHref : link.href;
+            const isActive = pathname === href;
             return (
               <Link
                 key={link.href}
-                href={link.href}
+                href={href}
                 className={cn(
                   "flex flex-1 flex-col items-center justify-center gap-1 py-2 transition-colors",
                   isActive
                     ? "text-primary"
-                    : "text-muted-foreground hover:text-foreground"
+                    : "text-muted-foreground hover:text-foreground",
                 )}
               >
                 <div
                   className={cn(
                     "flex h-8 w-12 items-center justify-center rounded-full transition-colors",
-                    isActive && "bg-primary/10"
+                    isActive && "bg-primary/10",
                   )}
                 >
                   <Icon className={cn("h-5 w-5", isActive && "text-primary")} />
                 </div>
-                <span className={cn("text-[10px] font-medium", isActive && "text-primary")}>
+                <span
+                  className={cn(
+                    "text-[10px] font-medium",
+                    isActive && "text-primary",
+                  )}
+                >
                   {link.label}
                 </span>
               </Link>
-            )
+            );
           })}
 
           {/* More Menu (Sheet) */}
@@ -251,15 +288,16 @@ export function Sidebar() {
               <button
                 className={cn(
                   "flex flex-1 flex-col items-center justify-center gap-1 py-2 transition-colors",
-                  secondaryNavLinks.some(l => l.href === pathname)
+                  secondaryNavLinks.some((l) => l.href === pathname)
                     ? "text-primary"
-                    : "text-muted-foreground hover:text-foreground"
+                    : "text-muted-foreground hover:text-foreground",
                 )}
               >
                 <div
                   className={cn(
                     "flex h-8 w-12 items-center justify-center rounded-full transition-colors",
-                    secondaryNavLinks.some(l => l.href === pathname) && "bg-primary/10"
+                    secondaryNavLinks.some((l) => l.href === pathname) &&
+                      "bg-primary/10",
                   )}
                 >
                   <Menu className="h-5 w-5" />
@@ -273,8 +311,8 @@ export function Sidebar() {
               </SheetHeader>
               <div className="flex flex-col gap-2 pb-8">
                 {secondaryNavLinks.map((link) => {
-                  const Icon = link.icon
-                  const isActive = pathname === link.href
+                  const Icon = link.icon;
+                  const isActive = pathname === link.href;
                   return (
                     <Link
                       key={link.href}
@@ -284,13 +322,13 @@ export function Sidebar() {
                         "flex items-center gap-4 rounded-xl px-4 py-3 text-base font-medium transition-colors",
                         isActive
                           ? "bg-primary text-primary-foreground"
-                          : "text-foreground hover:bg-accent"
+                          : "text-foreground hover:bg-accent",
                       )}
                     >
                       <Icon className="h-5 w-5" />
                       <span>{link.label}</span>
                     </Link>
-                  )
+                  );
                 })}
               </div>
             </SheetContent>
@@ -298,5 +336,5 @@ export function Sidebar() {
         </div>
       </nav>
     </>
-  )
+  );
 }
