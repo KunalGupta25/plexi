@@ -1,0 +1,8 @@
+⨯ Another next dev server is already running.
+
+- Local:        http://localhost:3000
+- PID:          8988
+- Dir:          D:\Plexi-remake\plexi-remake\plexi-web
+- Log:          .next\dev\logs\next-development.log
+
+Run taskkill /PID 8988 /F to stop it.

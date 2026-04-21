@@ -3,27 +3,23 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useTheme } from "next-themes";
-import { useIsMobile } from "@/hooks/use-mobile";
-import { cn } from "@/lib/utils";
+import { captureAppModeFromSearch } from "@/lib/app-mode";
 
 export default function SplashPage() {
   const router = useRouter();
   const { theme } = useTheme();
-  const isMobile = useIsMobile();
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
     setMounted(true);
+    captureAppModeFromSearch(window.location.search);
+
     const timer = setTimeout(() => {
-      if (isMobile) {
-        router.push("/home");
-      } else {
-        router.push("/");
-      }
+      router.push("/home");
     }, 3000);
 
     return () => clearTimeout(timer);
-  }, [router, isMobile]);
+  }, [router]);
 
   if (!mounted) return null;
 

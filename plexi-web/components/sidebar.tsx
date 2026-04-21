@@ -20,6 +20,7 @@ import { useTheme } from "next-themes";
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { captureAppModeFromSearch } from "@/lib/app-mode";
 import { useSidebar } from "@/components/sidebar-context";
 import { useIsMobile } from "@/hooks/use-mobile";
 import {
@@ -47,15 +48,39 @@ export function Sidebar() {
   const [mounted, setMounted] = useState(false);
   const { collapsed, setCollapsed } = useSidebar();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [appMode, setAppModeState] = useState(false);
   const isMobile = useIsMobile();
 
   useEffect(() => {
     setMounted(true);
+
+    const refreshAppMode = () => {
+      setAppModeState(captureAppModeFromSearch(window.location.search));
+    };
+
+    refreshAppMode();
+    window.addEventListener("storage", refreshAppMode);
+    window.addEventListener("focus", refreshAppMode);
+
+    return () => {
+      window.removeEventListener("storage", refreshAppMode);
+      window.removeEventListener("focus", refreshAppMode);
+    };
   }, []);
 
   if (pathname === "/splash") return null;
 
   const allLinks = [...mainNavLinks, ...secondaryNavLinks];
+  const getNavHref = (link: (typeof mainNavLinks)[number]) => {
+    if (link.label === "Home" && appMode) return "/home";
+    if (isMobile && link.mobileHref) return link.mobileHref;
+
+    return link.href;
+  };
+  const getIsActive = (href: string, fallbackHref: string) => {
+    if (pathname === href) return true;
+    return appMode && fallbackHref === "/" && pathname === "/home";
+  };
 
   return (
     <>
@@ -73,7 +98,7 @@ export function Sidebar() {
             collapsed ? "justify-center" : "justify-between",
           )}
         >
-          <Link href="/" className="flex items-center gap-2">
+          <Link href={appMode ? "/home" : "/"} className="flex items-center gap-2">
             <div className="flex h-10 w-10 items-center justify-center overflow-hidden">
               {mounted && (
                 <img
@@ -115,11 +140,12 @@ export function Sidebar() {
             )}
             {mainNavLinks.map((link) => {
               const Icon = link.icon;
-              const isActive = pathname === link.href;
+              const href = getNavHref(link);
+              const isActive = getIsActive(href, link.href);
               return (
                 <Link
                   key={link.href}
-                  href={link.href}
+                  href={href}
                   className={cn(
                     "flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors",
                     collapsed && "justify-center px-2",
@@ -202,7 +228,7 @@ export function Sidebar() {
       <header className="sticky top-0 z-50 w-full border-b border-border bg-background/95 backdrop-blur-md md:hidden">
         <nav className="flex h-14 items-center justify-between px-4">
           {/* Logo */}
-          <Link href="/" className="flex items-center gap-2">
+          <Link href={appMode ? "/home" : "/"} className="flex items-center gap-2">
             <div className="flex h-9 w-9 items-center justify-center overflow-hidden">
               {mounted && (
                 <img
@@ -248,9 +274,8 @@ export function Sidebar() {
           {/* Main Navigation Items */}
           {mainNavLinks.map((link) => {
             const Icon = link.icon;
-            const href =
-              isMobile && link.mobileHref ? link.mobileHref : link.href;
-            const isActive = pathname === href;
+            const href = getNavHref(link);
+            const isActive = getIsActive(href, link.href);
             return (
               <Link
                 key={link.href}
