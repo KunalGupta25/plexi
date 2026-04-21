@@ -11,6 +11,7 @@ import {
   Bot,
   Puzzle,
   NotebookPen,
+  Download,
   Menu,
   X,
   ChevronLeft,
@@ -38,6 +39,7 @@ const mainNavLinks = [
 ];
 
 const secondaryNavLinks = [
+  { href: "/download", label: "Download", icon: Download },
   { href: "/integrations", label: "Integrations", icon: Puzzle },
   { href: "/blogs", label: "Blog & Guides", icon: NotebookPen },
 ];
