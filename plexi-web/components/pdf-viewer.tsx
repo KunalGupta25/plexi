@@ -28,6 +28,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { isAppModeEnabled } from "@/lib/app-mode";
 import {
   Popover,
   PopoverContent,
@@ -181,12 +182,16 @@ export function PDFViewer({
         setError(null);
 
         const pdfjsLib = await import("pdfjs-dist");
+        const appMode = isAppModeEnabled();
 
-        pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.mjs`;
+        if (!appMode) {
+          pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.mjs`;
+        }
 
         const loadingTask = pdfjsLib.getDocument({
           url: url,
           withCredentials: false,
+          disableWorker: appMode,
         });
 
         const pdf = await loadingTask.promise;

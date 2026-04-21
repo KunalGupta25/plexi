@@ -5,6 +5,7 @@ import { ThemeProvider } from '@/components/theme-provider'
 import { SidebarProvider } from '@/components/sidebar-context'
 import { Sidebar } from '@/components/sidebar'
 import { MainContent } from '@/components/main-content'
+import { PWARegister } from '@/components/pwa-register'
 import './globals.css'
 
 const _geist = Geist({ subsets: ["latin"] });
@@ -14,6 +15,7 @@ export const metadata: Metadata = {
   title: 'Plexi - AI Study Hub',
   description: 'Your Study Material, Supercharged by AI. Access notes, presentations, and AI-powered study assistance all in one place.',
   generator: 'Plexi',
+  manifest: '/manifest.webmanifest',
   keywords: ['study', 'AI', 'education', 'notes', 'learning', 'study hub'],
   icons: {
     icon: [
@@ -61,6 +63,7 @@ export default function RootLayout({
           </SidebarProvider>
         </ThemeProvider>
         {process.env.NODE_ENV === 'production' && <Analytics />}
+        <PWARegister />
       </body>
     </html>
   )

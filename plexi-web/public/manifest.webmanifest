@@ -1,0 +1,24 @@
+{
+  "name": "Plexi Hub",
+  "short_name": "Plexi",
+  "description": "AI Study Hub",
+  "start_url": "/splash",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#020f1e",
+  "theme_color": "#020f1e",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}
