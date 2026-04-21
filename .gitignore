@@ -37,6 +37,8 @@ eggs/
 .eggs/
 lib/
 lib64/
+!plexi-web/lib/
+!plexi-web/lib/**
 parts/
 sdist/
 var/
