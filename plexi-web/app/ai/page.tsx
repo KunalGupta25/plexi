@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect, useCallback, Suspense } from "react";
+import { useState, useRef, useEffect, useCallback, useMemo, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -331,6 +331,34 @@ function AIChatContent() {
 
   const semesters = useSemesters(manifest);
   const subjects = useSubjects(manifest, scopeConfig.semester);
+  const markdownComponents = useMemo(
+    () => ({
+      code({
+        inline,
+        className,
+        children,
+        ...props
+      }: any) {
+        const match = /language-(\w+)/.exec(className || "");
+        const language = match ? match[1] : "";
+
+        if (!inline && language === "mermaid") {
+          return <Mermaid chart={String(children).replace(/\n$/, "")} />;
+        }
+
+        return !inline ? (
+          <code className={className} {...props}>
+            {children}
+          </code>
+        ) : (
+          <code className={className} {...props}>
+            {children}
+          </code>
+        );
+      },
+    }),
+    [],
+  );
 
   // Load saved config from localStorage
   useEffect(() => {
@@ -960,38 +988,7 @@ function AIChatContent() {
                       <ReactMarkdown
                         remarkPlugins={[remarkGfm, remarkMath]}
                         rehypePlugins={[rehypeKatex]}
-                        components={{
-                          code({
-                            node,
-                            inline,
-                            className,
-                            children,
-                            ...props
-                          }: any) {
-                            const match = /language-(\w+)/.exec(
-                              className || "",
-                            );
-                            const language = match ? match[1] : "";
-
-                            if (!inline && language === "mermaid") {
-                              return (
-                                <Mermaid
-                                  chart={String(children).replace(/\n$/, "")}
-                                />
-                              );
-                            }
-
-                            return !inline ? (
-                              <code className={className} {...props}>
-                                {children}
-                              </code>
-                            ) : (
-                              <code className={className} {...props}>
-                                {children}
-                              </code>
-                            );
-                          },
-                        }}
+                        components={markdownComponents}
                       >
                         {message.content}
                       </ReactMarkdown>

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
+import React, { memo, useEffect, useMemo, useRef, useState } from "react";
 import mermaid from "mermaid";
 import { Loader2 } from "lucide-react";
 
@@ -28,24 +28,26 @@ mermaid.initialize({
   },
 });
 
-export function Mermaid({ chart }: { chart: string }) {
+export const Mermaid = memo(function Mermaid({ chart }: { chart: string }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [svg, setSvg] = useState<string>("");
   const [error, setError] = useState<string>("");
+  const sanitizedChart = useMemo(
+    () =>
+      chart
+        .replace(/-->\|([^|]+)\|>/g, "-->|$1|")
+        .replace(/--\|([^|]+)\|-->/g, "-->|$1|"),
+    [chart],
+  );
 
   useEffect(() => {
+    let isMounted = true;
+
     // Force a small delay to ensure fonts are loaded
     const timer = setTimeout(() => {
-      let isMounted = true;
-
       const renderChart = async () => {
         try {
           const id = `mermaid-${Math.random().toString(36).slice(2, 9)}`;
-          // Sanitize common LLM Mermaid hallucinations
-          const sanitizedChart = chart
-            .replace(/-->\|([^|]+)\|>/g, "-->|$1|") // Fix |label|>
-            .replace(/--\|([^|]+)\|-->/g, "-->|$1|"); // Fix --|label|--> to standard -->|label|
-
           const { svg } = await mermaid.render(id, sanitizedChart);
           if (isMounted) {
             setSvg(svg);
@@ -58,15 +60,14 @@ export function Mermaid({ chart }: { chart: string }) {
         }
       };
 
-      renderChart();
-
-      return () => {
-        isMounted = false;
-      };
+      void renderChart();
     }, 100);
 
-    return () => clearTimeout(timer);
-  }, [chart]);
+    return () => {
+      isMounted = false;
+      clearTimeout(timer);
+    };
+  }, [sanitizedChart]);
 
   if (error) {
     return (
@@ -96,4 +97,6 @@ export function Mermaid({ chart }: { chart: string }) {
       dangerouslySetInnerHTML={{ __html: svg }}
     />
   );
-}
+});
+
+Mermaid.displayName = "Mermaid";
