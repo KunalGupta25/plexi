@@ -184,14 +184,13 @@ export function PDFViewer({
         const pdfjsLib = await import("pdfjs-dist");
         const appMode = isAppModeEnabled();
 
-        if (!appMode) {
-          pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.mjs`;
-        }
+        pdfjsLib.GlobalWorkerOptions.workerSrc = appMode
+          ? "/pdf.worker.min.mjs"
+          : `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.mjs`;
 
         const loadingTask = pdfjsLib.getDocument({
           url: url,
           withCredentials: false,
-          disableWorker: appMode,
         });
 
         const pdf = await loadingTask.promise;
