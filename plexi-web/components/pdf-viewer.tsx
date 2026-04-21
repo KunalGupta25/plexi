@@ -188,12 +188,24 @@ export function PDFViewer({
           ? "/pdf.worker.min.mjs"
           : `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.mjs`;
 
-        const loadingTask = pdfjsLib.getDocument({
+        const baseOptions = {
           url: url,
           withCredentials: false,
-        });
+        };
 
-        const pdf = await loadingTask.promise;
+        let pdf;
+        try {
+          pdf = await pdfjsLib.getDocument(baseOptions).promise;
+        } catch (workerError) {
+          if (!appMode) throw workerError;
+          // Electron may fail to bootstrap module workers; retry without worker.
+          pdf = await pdfjsLib
+            .getDocument({
+              ...baseOptions,
+              disableWorker: true,
+            })
+            .promise;
+        }
 
         pdfDocRef.current = pdf;
         setNumPages(pdf.numPages);
