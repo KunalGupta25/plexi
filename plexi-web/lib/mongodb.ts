@@ -1,32 +1,32 @@
 import { MongoClient } from "mongodb";
 
-const uri = process.env.MONGODB_URI || "";
+const uri = process.env.MONGODB_URI;
 const options = {};
 
-let client;
+let client: MongoClient | undefined;
 let clientPromise: Promise<MongoClient>;
 
-if (!process.env.MONGODB_URI && process.env.NODE_ENV !== "development") {
-  // During build time on some CI platforms, we might not have the URI yet.
-  // We'll let it fail gracefully or throw only when used.
-  console.warn("MONGODB_URI is missing. MongoDB features will be unavailable.");
-}
-
-if (process.env.NODE_ENV === "development") {
-  if (!process.env.MONGODB_URI) {
+if (!uri) {
+  if (process.env.NODE_ENV === "development") {
     throw new Error("Please add your Mongo URI to .env.local");
+  } else {
+    // In production/build, we don't want to crash. 
+    // But we also can't create a client.
+    // We'll create a promise that rejects only when awaited.
+    clientPromise = Promise.reject(new Error("MONGODB_URI is missing"));
+    console.warn("MONGODB_URI is missing. MongoDB features will be unavailable.");
   }
-  // In development mode, use a global variable so that the value
-  // is preserved across module reloads caused by HMR (Hot Module Replacement).
-  if (!(global as any)._mongoClientPromise) {
-    client = new MongoClient(uri, options);
-    (global as any)._mongoClientPromise = client.connect();
-  }
-  clientPromise = (global as any)._mongoClientPromise;
 } else {
-  // In production mode, it's best to not use a global variable.
-  client = new MongoClient(uri, options);
-  clientPromise = client.connect();
+  if (process.env.NODE_ENV === "development") {
+    if (!(global as any)._mongoClientPromise) {
+      client = new MongoClient(uri, options);
+      (global as any)._mongoClientPromise = client.connect();
+    }
+    clientPromise = (global as any)._mongoClientPromise;
+  } else {
+    client = new MongoClient(uri, options);
+    clientPromise = client.connect();
+  }
 }
 
 export default clientPromise;
