@@ -1,15 +1,15 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { 
-  Plus, 
-  Save, 
-  Trash2, 
-  ExternalLink, 
-  FileText, 
-  Globe, 
-  History, 
-  Layout, 
+import {
+  Plus,
+  Save,
+  Trash2,
+  ExternalLink,
+  FileText,
+  Globe,
+  History,
+  Layout,
   Settings,
   ArrowLeft,
   ChevronRight,
@@ -23,13 +23,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { MarkdownEditor } from "@/components/markdown-editor";
 import ReactMarkdown from "react-markdown";
 import rehypeRaw from "rehype-raw";
-import { 
-  getAdminBlogs, 
-  saveAdminBlog, 
-  deleteAdminBlog, 
-  Blog, 
-  publishReleaseNote, 
-  getLatestReleaseNote 
+import {
+  getAdminBlogs,
+  saveAdminBlog,
+  deleteAdminBlog,
+  Blog,
+  publishReleaseNote,
+  getLatestReleaseNote
 } from "@/lib/admin-store";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
@@ -72,14 +72,29 @@ export default function AdminPage() {
     }
   }, [isAuthenticated]);
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (password === process.env.NEXT_PUBLIC_ADMIN_PASSWORD) {
-      setIsAuthenticated(true);
-      sessionStorage.setItem("plexi_admin_auth", "true");
-      toast.success("Welcome back, Admin!");
-    } else {
-      toast.error("Incorrect password");
+    setLoading(true);
+    try {
+      const response = await fetch("/api/admin/auth", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password }),
+      });
+      
+      const data = await response.json();
+      
+      if (data.success) {
+        setIsAuthenticated(true);
+        sessionStorage.setItem("plexi_admin_auth", "true");
+        toast.success("Welcome back, Admin!");
+      } else {
+        toast.error(data.error || "Incorrect password");
+      }
+    } catch (err) {
+      toast.error("Authentication failed. Please try again.");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -110,10 +125,10 @@ export default function AdminPage() {
               Enter Dashboard
             </Button>
           </form>
-          
-          <Button 
-            variant="ghost" 
-            onClick={() => router.push("/")} 
+
+          <Button
+            variant="ghost"
+            onClick={() => router.push("/")}
             className="w-full rounded-xl text-muted-foreground"
           >
             <ArrowLeft className="mr-2 h-4 w-4" /> Return to Site
@@ -174,7 +189,7 @@ export default function AdminPage() {
   return (
     <div className="min-h-screen bg-background pb-20 pt-10 px-4 md:px-8">
       <div className="mx-auto max-w-5xl">
-        
+
         {/* Header */}
         <div className="mb-10 flex items-center justify-between">
           <div className="flex items-center gap-4">
@@ -255,45 +270,45 @@ export default function AdminPage() {
                   <div className="space-y-4">
                     <div className="space-y-2">
                       <label className="text-sm font-medium">Title</label>
-                      <Input 
-                        value={editingBlog.title || ""} 
-                        onChange={(e) => setEditingBlog({...editingBlog, title: e.target.value})}
+                      <Input
+                        value={editingBlog.title || ""}
+                        onChange={(e) => setEditingBlog({ ...editingBlog, title: e.target.value })}
                         placeholder="Blog Title"
                       />
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <label className="text-sm font-medium">Tag</label>
-                        <Input 
-                          value={editingBlog.tag || ""} 
-                          onChange={(e) => setEditingBlog({...editingBlog, tag: e.target.value})}
+                        <Input
+                          value={editingBlog.tag || ""}
+                          onChange={(e) => setEditingBlog({ ...editingBlog, tag: e.target.value })}
                           placeholder="Blog, Guide, Wiki..."
                         />
                       </div>
                       <div className="space-y-2">
                         <label className="text-sm font-medium">Source</label>
-                        <Input 
-                          value={editingBlog.source || ""} 
-                          onChange={(e) => setEditingBlog({...editingBlog, source: e.target.value})}
+                        <Input
+                          value={editingBlog.source || ""}
+                          onChange={(e) => setEditingBlog({ ...editingBlog, source: e.target.value })}
                           placeholder="Medium, Notion, GitHub..."
                         />
                       </div>
                     </div>
                     <div className="space-y-2">
                       <label className="text-sm font-medium">Description</label>
-                      <Textarea 
-                        value={editingBlog.description || ""} 
-                        onChange={(e) => setEditingBlog({...editingBlog, description: e.target.value})}
+                      <Textarea
+                        value={editingBlog.description || ""}
+                        onChange={(e) => setEditingBlog({ ...editingBlog, description: e.target.value })}
                         placeholder="Short summary..."
                         className="h-20"
                       />
                     </div>
                     <div className="flex items-center gap-2 pt-2">
-                      <input 
-                        type="checkbox" 
-                        id="isInternal" 
-                        checked={editingBlog.isInternal || false} 
-                        onChange={(e) => setEditingBlog({...editingBlog, isInternal: e.target.checked})}
+                      <input
+                        type="checkbox"
+                        id="isInternal"
+                        checked={editingBlog.isInternal || false}
+                        onChange={(e) => setEditingBlog({ ...editingBlog, isInternal: e.target.checked })}
                         className="h-4 w-4 rounded border-border"
                       />
                       <label htmlFor="isInternal" className="text-sm font-medium">Internal Blog (Markdown)</label>
@@ -302,9 +317,9 @@ export default function AdminPage() {
                     {!editingBlog.isInternal ? (
                       <div className="space-y-2 animate-in fade-in duration-300">
                         <label className="text-sm font-medium">External URL</label>
-                        <Input 
-                          value={editingBlog.url || ""} 
-                          onChange={(e) => setEditingBlog({...editingBlog, url: e.target.value})}
+                        <Input
+                          value={editingBlog.url || ""}
+                          onChange={(e) => setEditingBlog({ ...editingBlog, url: e.target.value })}
                           placeholder="https://..."
                         />
                       </div>
@@ -329,9 +344,9 @@ export default function AdminPage() {
                           <ReactMarkdown rehypePlugins={[rehypeRaw]}>{editingBlog.content || "_No content yet_"}</ReactMarkdown>
                         </div>
                       ) : (
-                        <MarkdownEditor 
-                          value={editingBlog.content || ""} 
-                          onChange={(content) => setEditingBlog({...editingBlog, content})}
+                        <MarkdownEditor
+                          value={editingBlog.content || ""}
+                          onChange={(content) => setEditingBlog({ ...editingBlog, content })}
                           className="h-[400px] font-mono text-sm leading-relaxed"
                           onSave={handleSaveBlog}
                         />
@@ -356,8 +371,8 @@ export default function AdminPage() {
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <label className="text-sm font-medium">Action Button Text</label>
-                      <Input 
-                        value={releaseButtonText} 
+                      <Input
+                        value={releaseButtonText}
                         onChange={(e) => setReleaseButtonText(e.target.value)}
                         placeholder="e.g. Read Detailed Notes"
                         className="rounded-xl"
@@ -365,8 +380,8 @@ export default function AdminPage() {
                     </div>
                     <div className="space-y-2">
                       <label className="text-sm font-medium">Action Button URL</label>
-                      <Input 
-                        value={releaseButtonUrl} 
+                      <Input
+                        value={releaseButtonUrl}
                         onChange={(e) => setReleaseButtonUrl(e.target.value)}
                         placeholder="https://..."
                         className="rounded-xl"
@@ -381,17 +396,17 @@ export default function AdminPage() {
                         <span className="text-xs text-muted-foreground">Ctrl+S to save | Paste images</span>
                       </div>
                     </div>
-                  <MarkdownEditor 
-                    value={releaseNote} 
-                    onChange={setReleaseNote}
-                    className="h-[400px] font-mono text-sm"
-                    onSave={handlePublishReleaseNote}
-                  />
-                  <Button onClick={handlePublishReleaseNote} className="w-full gap-2 rounded-xl h-12">
-                    <Globe className="h-4 w-4" /> Publish to All Users
-                  </Button>
+                    <MarkdownEditor
+                      value={releaseNote}
+                      onChange={setReleaseNote}
+                      className="h-[400px] font-mono text-sm"
+                      onSave={handlePublishReleaseNote}
+                    />
+                    <Button onClick={handlePublishReleaseNote} className="w-full gap-2 rounded-xl h-12">
+                      <Globe className="h-4 w-4" /> Publish to All Users
+                    </Button>
+                  </div>
                 </div>
-              </div>
 
                 <div className="space-y-4">
                   <label className="text-sm font-medium">Live Preview</label>
