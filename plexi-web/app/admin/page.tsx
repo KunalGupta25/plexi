@@ -22,6 +22,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { MarkdownEditor } from "@/components/markdown-editor";
 import ReactMarkdown from "react-markdown";
+import rehypeRaw from "rehype-raw";
 import { 
   getAdminBlogs, 
   saveAdminBlog, 
@@ -325,7 +326,7 @@ export default function AdminPage() {
                       </div>
                       {previewMode ? (
                         <div className="prose prose-sm dark:prose-invert h-[400px] overflow-y-auto rounded-xl border border-border bg-muted/30 p-4">
-                          <ReactMarkdown>{editingBlog.content || "_No content yet_"}</ReactMarkdown>
+                          <ReactMarkdown rehypePlugins={[rehypeRaw]}>{editingBlog.content || "_No content yet_"}</ReactMarkdown>
                         </div>
                       ) : (
                         <MarkdownEditor 
@@ -400,7 +401,7 @@ export default function AdminPage() {
                         <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-[10px] font-bold text-primary uppercase">
                           Latest Update
                         </div>
-                        <ReactMarkdown>{releaseNote}</ReactMarkdown>
+                        <ReactMarkdown rehypePlugins={[rehypeRaw]}>{releaseNote}</ReactMarkdown>
                         {releaseButtonText && (
                           <div className="mt-8">
                             <Button className="rounded-xl px-8" variant="outline" disabled>

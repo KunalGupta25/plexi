@@ -4,6 +4,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Blog, getAdminBlogs } from "@/lib/admin-store";
 import ReactMarkdown from "react-markdown";
+import rehypeRaw from "rehype-raw";
 import { ArrowLeft, Calendar, User, Tag } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -71,7 +72,7 @@ export default function InternalBlogPage() {
         <hr className="mb-12 border-border" />
 
         <div className="prose prose-lg dark:prose-invert max-w-none prose-headings:font-bold prose-a:text-primary prose-code:text-primary">
-          <ReactMarkdown>{blog.content || ""}</ReactMarkdown>
+          <ReactMarkdown rehypePlugins={[rehypeRaw]}>{blog.content || ""}</ReactMarkdown>
         </div>
 
         <div className="mt-16 pt-8 border-t border-border flex items-center justify-between text-sm text-muted-foreground">
