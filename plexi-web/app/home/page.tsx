@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import {
@@ -32,7 +32,7 @@ import { cn } from "@/lib/utils";
 
 type MaterialFile = Omit<RecentFile, "viewedAt">;
 
-export default function HomePage() {
+function HomeContent() {
   const router = useRouter();
   const { data: manifest, isLoading: manifestLoading } = useManifest();
   const searchParams = useSearchParams();
@@ -288,6 +288,14 @@ export default function HomePage() {
         </section>
       </div>
     </main>
+  );
+}
+
+export default function HomePage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-background" />}>
+      <HomeContent />
+    </Suspense>
   );
 }
 

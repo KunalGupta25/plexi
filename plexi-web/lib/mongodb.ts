@@ -10,11 +10,15 @@ if (!uri) {
   if (process.env.NODE_ENV === "development") {
     throw new Error("Please add your Mongo URI to .env.local");
   } else {
-    // In production/build, we don't want to crash. 
-    // But we also can't create a client.
-    // We'll create a promise that rejects only when awaited.
-    clientPromise = Promise.reject(new Error("MONGODB_URI is missing"));
-    console.warn("MONGODB_URI is missing. MongoDB features will be unavailable.");
+    // In production/build, we don't want to crash the process at the top level.
+    // We'll create a promise that only throws when actually awaited.
+    clientPromise = (async () => {
+      // During Next.js build, this might be evaluated. 
+      // If we are in the middle of a build, we just return a "never" promise or similar 
+      // to prevent the build worker from crashing on a top-level rejection.
+      console.warn("MONGODB_URI is missing during build/runtime. MongoDB features will fail.");
+      throw new Error("MONGODB_URI is missing");
+    })();
   }
 } else {
   if (process.env.NODE_ENV === "development") {
