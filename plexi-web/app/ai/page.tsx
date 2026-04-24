@@ -338,7 +338,8 @@ function AIChatContent() {
         className,
         children,
         ...props
-      }: any) {
+      }: // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      any) {
         const match = /language-(\w+)/.exec(className || "");
         const language = match ? match[1] : "";
 
@@ -405,6 +406,11 @@ function AIChatContent() {
           content: `Great! I'm now configured to help you with **${subjectParam}** from **${semesterParam}**. Ask me anything about your study materials!`,
         },
       ]);
+    } else {
+      const storedSemester = localStorage.getItem("plexi-user-semester");
+      if (storedSemester) {
+        setScopeConfig((prev) => ({ ...prev, semester: storedSemester }));
+      }
     }
   }, [searchParams]);
 

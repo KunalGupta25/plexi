@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import {
   BookOpen,
@@ -17,6 +17,12 @@ import {
 import { Button } from "@/components/ui/button";
 import { useManifest } from "@/lib/api";
 import {
+  isAppModeEnabled,
+  isDashboardModeEnabled,
+  captureAppModeFromSearch,
+  captureDashboardModeFromSearch,
+} from "@/lib/app-mode";
+import {
   getFileExtension,
   getMaterialHref,
   readRecentFiles,
@@ -29,8 +35,11 @@ type MaterialFile = Omit<RecentFile, "viewedAt">;
 export default function HomePage() {
   const router = useRouter();
   const { data: manifest, isLoading: manifestLoading } = useManifest();
+  const searchParams = useSearchParams();
   const [query, setQuery] = useState("");
   const [recentFiles, setRecentFiles] = useState<RecentFile[]>([]);
+  const [userName, setUserName] = useState("Student");
+  const [showSettings, setShowSettings] = useState(false);
 
   useEffect(() => {
     const refreshRecentFiles = () => setRecentFiles(readRecentFiles());
@@ -38,6 +47,14 @@ export default function HomePage() {
     refreshRecentFiles();
     window.addEventListener("storage", refreshRecentFiles);
     window.addEventListener("focus", refreshRecentFiles);
+
+    const storedName = localStorage.getItem("plexi-user-name");
+    if (storedName) setUserName(storedName);
+
+    const search = window.location.search;
+    const isApp = captureAppModeFromSearch(search);
+    const isDash = captureDashboardModeFromSearch(search);
+    setShowSettings(isApp || isDash);
 
     return () => {
       window.removeEventListener("storage", refreshRecentFiles);
@@ -102,15 +119,20 @@ export default function HomePage() {
         <header className="mb-8 flex items-center justify-between md:mb-10">
           <div>
             <h1 className="text-2xl font-bold tracking-tight md:text-4xl">
-              Hi, Student
+              Hi, {userName}
             </h1>
             <p className="mt-1 text-sm text-muted-foreground md:text-base">
               Ready to study today?
             </p>
           </div>
-          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-secondary md:h-12 md:w-12">
-            <Settings className="h-5 w-5 text-muted-foreground" />
-          </div>
+          {showSettings && (
+            <Link
+              href="/settings"
+              className="flex h-10 w-10 items-center justify-center rounded-full bg-secondary md:h-12 md:w-12 transition-colors hover:bg-secondary/80"
+            >
+              <Settings className="h-5 w-5 text-muted-foreground" />
+            </Link>
+          )}
         </header>
 
         <form className="relative mb-8 md:mb-10" onSubmit={handleSearchSubmit}>

@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { useRouter } from "next/navigation"
 import {
   ExternalLink,
   Copy,
@@ -11,11 +12,15 @@ import {
   Plug,
   ArrowRight,
   Terminal,
-  AlertCircle,
   Info,
+  ArrowLeft,
+  Monitor,
+  Wrench,
+  Settings,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 const MCP_URL = "https://plexi-mcp.vercel.app/api/mcp"
 const CHATGPT_URL = "https://chatgpt.com/g/g-69caa671910481919ce71d19952e34e5-plexi"
@@ -52,7 +57,7 @@ function CopyButton({ text, label = "Copy" }: { text: string; label?: string }) 
 
 function CodeBlock({ filename, code }: { filename?: string; code: string }) {
   return (
-    <div className="overflow-hidden rounded-xl border border-border bg-card">
+    <div className="overflow-hidden rounded-xl border border-border bg-black/5 dark:bg-black/20">
       {filename && (
         <div className="flex items-center justify-between border-b border-border bg-muted/50 px-4 py-2">
           <span className="text-xs font-medium text-muted-foreground">{filename}</span>
@@ -61,7 +66,7 @@ function CodeBlock({ filename, code }: { filename?: string; code: string }) {
       )}
       <div className={cn("relative", !filename && "flex items-start justify-between gap-2 p-4")}>
         <pre className={cn("overflow-x-auto font-mono text-sm", filename ? "p-4" : "flex-1 m-0")}>
-          <code>{code}</code>
+          <code className="text-primary">{code}</code>
         </pre>
         {!filename && <CopyButton text={code} />}
       </div>
@@ -71,202 +76,235 @@ function CodeBlock({ filename, code }: { filename?: string; code: string }) {
 
 function Note({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex gap-3 rounded-xl border border-border bg-secondary/40 px-4 py-3 text-sm">
-      <Info className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
-      <p className="text-muted-foreground">{children}</p>
+    <div className="flex gap-3 rounded-xl border border-primary/10 bg-primary/5 px-4 py-3 text-sm">
+      <Info className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+      <div className="text-primary/80">{children}</div>
     </div>
   )
 }
 
-function OptionBadge({ n }: { n: number }) {
-  return (
-    <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">
-      {n}
-    </span>
-  )
-}
-
 export default function IntegrationsPage() {
-  return (
-    <div className="min-h-screen px-4 py-12 pb-24 pt-14 md:min-h-screen md:pb-12 md:pt-12 lg:py-16">
-      <div className="mx-auto max-w-3xl">
+  const router = useRouter();
 
-        {/* Header */}
-        <div className="mb-12 text-center">
-          <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-border bg-secondary/50 px-4 py-1.5 text-sm text-muted-foreground">
-            <Plug className="h-4 w-4" />
-            <span>Integrations</span>
+  return (
+    <main className="min-h-screen bg-background px-4 pb-24 pt-6 md:px-8 md:pb-12 md:pt-10">
+      <div className="mx-auto flex w-full max-w-4xl flex-col">
+        
+        {/* Header Navigation */}
+        <header className="mb-10 flex items-center gap-4">
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            onClick={() => router.back()} 
+            className="h-10 w-10 shrink-0 rounded-full bg-secondary"
+          >
+            <ArrowLeft className="h-5 w-5" />
+          </Button>
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight md:text-3xl">
+              Integrations
+            </h1>
+            <p className="text-sm text-muted-foreground md:text-base">
+              Access Plexi from your favourite AI tools
+            </p>
           </div>
-          <h1 className="mb-4 text-balance text-4xl font-bold tracking-tight sm:text-5xl">
-            Use Plexi Anywhere
-          </h1>
-          <p className="mx-auto max-w-2xl text-lg text-muted-foreground">
-            Integrate Plexi with your favourite AI tools through the Model Context Protocol (MCP)
-            and access your study materials from anywhere.
-          </p>
+        </header>
+
+        {/* Hero Section */}
+        <div className="mb-12 rounded-3xl border border-border bg-gradient-to-br from-primary/10 via-background to-background p-8 md:p-12">
+          <div className="max-w-2xl">
+            <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-primary/10 px-4 py-1 text-sm font-medium text-primary">
+              <Sparkles className="h-4 w-4" />
+              <span>Model Context Protocol (MCP)</span>
+            </div>
+            <h2 className="mb-4 text-3xl font-bold tracking-tight md:text-5xl">
+              Use Plexi Anywhere
+            </h2>
+            <p className="text-lg text-muted-foreground">
+              Integrate Plexi with ChatGPT or Claude and access your study materials directly within your conversation flow.
+            </p>
+          </div>
         </div>
 
         {/* Integration Cards */}
         <div className="mb-16 grid gap-6 md:grid-cols-2">
           {/* ChatGPT Card */}
-          <div className="group relative overflow-hidden rounded-2xl border border-border bg-card p-6">
-            <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-xl bg-secondary">
-              <MessageSquare className="h-7 w-7" />
+          <div className="group flex flex-col justify-between rounded-2xl border border-border bg-card p-6 shadow-sm transition-all hover:border-primary/20 hover:shadow-md">
+            <div>
+              <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-xl bg-[#10a37f]/10 text-[#10a37f]">
+                <MessageSquare className="h-7 w-7" />
+              </div>
+              <h3 className="mb-2 text-xl font-semibold">Plexi on ChatGPT</h3>
+              <p className="mb-6 text-sm text-muted-foreground leading-relaxed">
+                Use Plexi as a custom GPT. Zero setup needed — just open and start chatting with your materials.
+              </p>
             </div>
-            <h3 className="mb-2 text-xl font-semibold">Plexi on ChatGPT</h3>
-            <p className="mb-6 text-sm text-muted-foreground">
-              Use Plexi as a custom GPT to access your study materials directly within ChatGPT. No setup needed — just open and chat.
-            </p>
-            <Button className="rounded-xl" asChild>
+            <Button className="w-full rounded-xl" asChild>
               <a href={CHATGPT_URL} target="_blank" rel="noopener noreferrer">
                 Open in ChatGPT
                 <ExternalLink className="ml-2 h-4 w-4" />
               </a>
             </Button>
-            <div className="absolute -right-4 -top-4 h-24 w-24 rounded-full bg-primary/5" />
           </div>
 
           {/* Claude Card */}
-          <div className="group relative overflow-hidden rounded-2xl border border-border bg-card p-6">
-            <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-xl bg-secondary">
-              <Sparkles className="h-7 w-7" />
+          <div className="group flex flex-col justify-between rounded-2xl border border-border bg-card p-6 shadow-sm transition-all hover:border-primary/20 hover:shadow-md">
+            <div>
+              <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                <Plug className="h-7 w-7" />
+              </div>
+              <h3 className="mb-2 text-xl font-semibold">Claude Integration</h3>
+              <p className="mb-6 text-sm text-muted-foreground leading-relaxed">
+                Connect Plexi to Claude Desktop or web via MCP server. Choose between three easy setup options.
+              </p>
             </div>
-            <h3 className="mb-2 text-xl font-semibold">Claude MCP Integration</h3>
-            <p className="mb-6 text-sm text-muted-foreground">
-              Connect Plexi to Claude using the Model Context Protocol — via a custom connector, a one-click script, or manual config.
-            </p>
-            <Button variant="outline" className="rounded-xl" asChild>
+            <Button variant="secondary" className="w-full rounded-xl" asChild>
               <a href="#claude-setup">
                 View Setup Guide
                 <ArrowRight className="ml-2 h-4 w-4" />
               </a>
             </Button>
-            <div className="absolute -right-4 -top-4 h-24 w-24 rounded-full bg-primary/5" />
           </div>
         </div>
 
         {/* Claude Setup Guide */}
-        <section id="claude-setup" className="scroll-mt-20 space-y-10">
-          <div>
+        <section id="claude-setup" className="scroll-mt-20">
+          <div className="mb-8">
             <div className="mb-2 flex items-center gap-2">
-              <Code2 className="h-5 w-5 text-muted-foreground" />
+              <Code2 className="h-5 w-5 text-primary" />
               <h2 className="text-2xl font-bold">Claude Setup Guide</h2>
             </div>
             <p className="text-muted-foreground">
-              The Claude connector uses MCP (Model Context Protocol). Remote MCP connectors and custom connectors are still in beta
-              and not yet available to all users. Free tier users are also limited to one active custom connector at a time,
-              so keep that in mind.
+              Configure Plexi as an MCP tool in Claude to allow the AI to search your study materials.
             </p>
           </div>
 
-          {/* Option 1 */}
-          <div className="space-y-4">
-            <div className="flex items-center gap-3">
-              <OptionBadge n={1} />
-              <h3 className="text-lg font-semibold">Option 1 — Custom Connector <span className="text-sm font-normal text-muted-foreground">(Beta)</span></h3>
-            </div>
-            <p className="text-sm text-muted-foreground">
-              If you have access to Claude's custom connector feature, this is the most straightforward path — no scripts, no config file editing.
-            </p>
-            <ol className="space-y-3 text-sm text-muted-foreground">
-              <li className="flex gap-2">
-                <span className="font-medium text-foreground">1.</span>
-                Open Claude and navigate to the <span className="font-medium text-foreground">Connectors</span> tab, then click <span className="font-medium text-foreground">Add Custom Connector</span>.
-              </li>
-              <li className="flex gap-2">
-                <span className="font-medium text-foreground">2.</span>
-                Enter a name (e.g. <code className="rounded bg-muted px-1 py-0.5 font-mono text-xs">Plexi</code>) and paste the following as the <span className="font-medium text-foreground">Remote MCP Server URL</span>:
-              </li>
-            </ol>
-            <CodeBlock code={MCP_URL} />
-            <ol className="space-y-3 text-sm text-muted-foreground" start={3}>
-              <li className="flex gap-2">
-                <span className="font-medium text-foreground">3.</span>
-                Click <span className="font-medium text-foreground">Add</span> and you're done. Set tool permissions to <span className="font-medium text-foreground">Always Allow</span> for a smoother experience.
-              </li>
-            </ol>
-            <Note>
-              Custom connectors are currently in beta and may not be available to all Claude users yet.
-            </Note>
-          </div>
+          <Tabs defaultValue="connector" className="w-full">
+            <TabsList className="mb-8 grid w-full grid-cols-3 rounded-2xl p-1 h-auto bg-muted/50">
+              <TabsTrigger value="connector" className="rounded-xl py-3 gap-2 data-[state=active]:bg-card data-[state=active]:shadow-sm">
+                <Sparkles className="h-4 w-4" />
+                <span className="hidden sm:inline">Custom Connector</span>
+                <span className="sm:hidden">Simple</span>
+              </TabsTrigger>
+              <TabsTrigger value="script" className="rounded-xl py-3 gap-2 data-[state=active]:bg-card data-[state=active]:shadow-sm">
+                <Terminal className="h-4 w-4" />
+                <span className="hidden sm:inline">One-Click Script</span>
+                <span className="sm:hidden">Script</span>
+              </TabsTrigger>
+              <TabsTrigger value="manual" className="rounded-xl py-3 gap-2 data-[state=active]:bg-card data-[state=active]:shadow-sm">
+                <Settings className="h-4 w-4" />
+                <span className="hidden sm:inline">Manual Config</span>
+                <span className="sm:hidden">Manual</span>
+              </TabsTrigger>
+            </TabsList>
 
-          <hr className="border-border" />
-
-          {/* Option 2 */}
-          <div className="space-y-4">
-            <div className="flex items-center gap-3">
-              <OptionBadge n={2} />
-              <h3 className="text-lg font-semibold">Option 2 — One-Click Configurator</h3>
-            </div>
-            <p className="text-sm text-muted-foreground">
-              Options 2 and 3 require the <span className="font-medium text-foreground">Claude Desktop app</span> to be installed.{" "}
-              <a href="https://claude.ai/download" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-0.5 underline underline-offset-2">
-                Download it from claude.ai/download <ExternalLink className="h-3 w-3" />
-              </a>
-            </p>
-            <p className="text-sm text-muted-foreground">
-              Open your terminal and run the command for your operating system. This script automatically configures the Plexi MCP server in your Claude Desktop setup.
-              Restart Claude Desktop after running it and the connector will be active.
-            </p>
-
-            <div className="space-y-3">
-              <div>
-                <p className="mb-1.5 text-xs font-medium text-muted-foreground flex items-center gap-1.5">
-                  <Terminal className="h-3.5 w-3.5" /> Windows
+            {/* Option 1: Connector */}
+            <TabsContent value="connector" className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300 focus-visible:outline-none">
+              <div className="rounded-2xl border border-border bg-card p-6 md:p-8">
+                <div className="mb-6 flex items-center justify-between">
+                  <h3 className="text-xl font-semibold">Option 1: Custom Connector <span className="ml-2 text-sm font-normal text-primary bg-primary/10 px-2 py-0.5 rounded-full">Recommended</span></h3>
+                </div>
+                <p className="mb-6 text-muted-foreground leading-relaxed">
+                  Best for Claude.ai web users. This method requires no local setup and works directly through the Claude interface.
                 </p>
-                <CodeBlock code={windowsScript} />
+                <div className="space-y-4 text-sm text-muted-foreground">
+                  <div className="flex gap-4">
+                    <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-secondary text-xs font-bold text-foreground">1</div>
+                    <p>Open Claude and go to <span className="font-medium text-foreground">Connectors</span> tab under settings.</p>
+                  </div>
+                  <div className="flex gap-4">
+                    <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-secondary text-xs font-bold text-foreground">2</div>
+                    <p>Click <span className="font-medium text-foreground">Add Custom Connector</span> and enter <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-xs text-primary">Plexi</code> as the name.</p>
+                  </div>
+                  <div className="flex gap-4">
+                    <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-secondary text-xs font-bold text-foreground">3</div>
+                    <div className="flex-1 space-y-3">
+                      <p>Paste the following as the <span className="font-medium text-foreground">Remote MCP Server URL</span>:</p>
+                      <CodeBlock code={MCP_URL} />
+                    </div>
+                  </div>
+                </div>
+                <div className="mt-8">
+                  <Note>
+                    Custom connectors are currently in beta. Free tier users are limited to one active custom connector.
+                  </Note>
+                </div>
               </div>
-              <div>
-                <p className="mb-1.5 text-xs font-medium text-muted-foreground flex items-center gap-1.5">
-                  <Terminal className="h-3.5 w-3.5" /> macOS
+            </TabsContent>
+
+            {/* Option 2: Script */}
+            <TabsContent value="script" className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300 focus-visible:outline-none">
+              <div className="rounded-2xl border border-border bg-card p-6 md:p-8">
+                <div className="mb-6 flex items-center justify-between">
+                  <h3 className="text-xl font-semibold">Option 2: One-Click Script</h3>
+                </div>
+                <p className="mb-6 text-muted-foreground leading-relaxed">
+                  Best for users of the <span className="font-medium text-foreground">Claude Desktop app</span>. This script automatically updates your configuration file.
                 </p>
-                <CodeBlock code={macScript} />
+                
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div className="space-y-3">
+                    <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+                      <Monitor className="h-3.5 w-3.5" /> Windows
+                    </p>
+                    <CodeBlock code={windowsScript} />
+                  </div>
+                  <div className="space-y-3">
+                    <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+                      <Monitor className="h-3.5 w-3.5" /> macOS
+                    </p>
+                    <CodeBlock code={macScript} />
+                  </div>
+                </div>
+                
+                <div className="mt-8 flex items-start gap-3 rounded-xl border border-border bg-muted/30 p-4 text-sm text-muted-foreground">
+                  <div className="mt-0.5 h-2 w-2 shrink-0 rounded-full bg-amber-500" />
+                  <p>Restart Claude Desktop after running the command to apply changes.</p>
+                </div>
               </div>
-            </div>
+            </TabsContent>
+
+            {/* Option 3: Manual */}
+            <TabsContent value="manual" className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300 focus-visible:outline-none">
+              <div className="rounded-2xl border border-border bg-card p-6 md:p-8">
+                <div className="mb-6 flex items-center justify-between">
+                  <h3 className="text-xl font-semibold">Option 3: Manual Configuration</h3>
+                </div>
+                <p className="mb-6 text-muted-foreground leading-relaxed">
+                  For advanced users. Edit your <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-xs">claude_desktop_config.json</code> manually.
+                </p>
+
+                <div className="space-y-6">
+                  <div className="space-y-3">
+                    <p className="text-sm font-medium text-foreground flex items-center gap-2">
+                      <Wrench className="h-4 w-4 text-muted-foreground" /> Config File Location
+                    </p>
+                    <ul className="grid gap-2 text-sm sm:grid-cols-2">
+                      <li className="rounded-xl border border-border bg-muted/30 p-3">
+                        <span className="mb-1 block text-[10px] font-bold uppercase text-muted-foreground">Windows</span>
+                        <code className="block break-all font-mono text-xs">%APPDATA%\Claude\claude_desktop_config.json</code>
+                      </li>
+                      <li className="rounded-xl border border-border bg-muted/30 p-3">
+                        <span className="mb-1 block text-[10px] font-bold uppercase text-muted-foreground">macOS</span>
+                        <code className="block break-all font-mono text-xs">~/Library/Application Support/Claude/claude_desktop_config.json</code>
+                      </li>
+                    </ul>
+                  </div>
+
+                  <div className="space-y-3">
+                    <p className="text-sm font-medium text-foreground">Add this entry to <code className="rounded bg-muted px-1 py-0.5 font-mono text-xs">mcpServers</code>:</p>
+                    <CodeBlock filename="claude_desktop_config.json" code={manualConfig} />
+                  </div>
+                </div>
+              </div>
+            </TabsContent>
+          </Tabs>
+
+          <div className="mt-12 text-center text-sm text-muted-foreground">
+            <p>Need help? Check our <a href="/blogs" className="underline underline-offset-4">Guide to MCP</a> or contact support.</p>
           </div>
-
-          <hr className="border-border" />
-
-          {/* Option 3 */}
-          <div className="space-y-4">
-            <div className="flex items-center gap-3">
-              <OptionBadge n={3} />
-              <h3 className="text-lg font-semibold">Option 3 — Manual Configuration</h3>
-            </div>
-            <p className="text-sm text-muted-foreground">
-              If you prefer to set it up manually, you'll need to edit the Claude Desktop config file directly.
-              The easiest way to find it is through the app itself: open Claude Desktop, go to <span className="font-medium text-foreground">Settings</span>,
-              and navigate to the <span className="font-medium text-foreground">Developer</span> tab.
-              Under the <span className="font-medium text-foreground">Local MCP Servers</span> section, click <span className="font-medium text-foreground">Edit Config</span>.
-            </p>
-            <p className="text-sm text-muted-foreground">
-              Alternatively, you can open the file directly from its default location:
-            </p>
-            <ul className="space-y-1.5 text-sm">
-              <li className="flex items-start gap-2">
-                <span className="mt-0.5 font-medium text-muted-foreground shrink-0">Windows:</span>
-                <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-xs break-all">%APPDATA%\Claude\claude_desktop_config.json</code>
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="mt-0.5 font-medium text-muted-foreground shrink-0">macOS:</span>
-                <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-xs break-all">~/Library/Application Support/Claude/claude_desktop_config.json</code>
-              </li>
-            </ul>
-            <p className="text-sm text-muted-foreground">
-              Inside the config, locate the <code className="rounded bg-muted px-1 py-0.5 font-mono text-xs">mcpServers</code> object and add the following entry:
-            </p>
-            <CodeBlock filename="claude_desktop_config.json" code={manualConfig} />
-            <p className="text-sm text-muted-foreground">
-              Save the file, then restart Claude Desktop. The Plexi MCP server should now appear in your active connectors.
-            </p>
-          </div>
-
-          {/* Note footer */}
-          <Note>
-            Option 1 is the recommended path for the best experience across platforms. Options 2 and 3 require the Claude Desktop app.
-          </Note>
         </section>
       </div>
-    </div>
+    </main>
   )
 }

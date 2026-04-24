@@ -5,7 +5,6 @@ import { usePathname } from "next/navigation";
 import {
   Moon,
   Sun,
-  Sparkles,
   Home,
   BookOpen,
   Bot,
@@ -13,7 +12,6 @@ import {
   NotebookPen,
   Download,
   Menu,
-  X,
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
@@ -21,7 +19,10 @@ import { useTheme } from "next-themes";
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { captureAppModeFromSearch } from "@/lib/app-mode";
+import {
+  captureAppModeFromSearch,
+  captureDashboardModeFromSearch,
+} from "@/lib/app-mode";
 import { useSidebar } from "@/components/sidebar-context";
 import { useIsMobile } from "@/hooks/use-mobile";
 import {
@@ -51,37 +52,40 @@ export function Sidebar() {
   const { collapsed, setCollapsed } = useSidebar();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [appMode, setAppModeState] = useState(false);
+  const [dashboardMode, setDashboardModeState] = useState(false);
   const isMobile = useIsMobile();
 
   useEffect(() => {
     setMounted(true);
 
-    const refreshAppMode = () => {
-      setAppModeState(captureAppModeFromSearch(window.location.search));
+    const refreshModes = () => {
+      const search = window.location.search;
+      setAppModeState(captureAppModeFromSearch(search));
+      setDashboardModeState(captureDashboardModeFromSearch(search));
     };
 
-    refreshAppMode();
-    window.addEventListener("storage", refreshAppMode);
-    window.addEventListener("focus", refreshAppMode);
+    refreshModes();
+    window.addEventListener("storage", refreshModes);
+    window.addEventListener("focus", refreshModes);
 
     return () => {
-      window.removeEventListener("storage", refreshAppMode);
-      window.removeEventListener("focus", refreshAppMode);
+      window.removeEventListener("storage", refreshModes);
+      window.removeEventListener("focus", refreshModes);
     };
   }, []);
 
   if (pathname === "/splash") return null;
 
-  const allLinks = [...mainNavLinks, ...secondaryNavLinks];
+  const homeDashboardEnabled = appMode || dashboardMode;
   const getNavHref = (link: (typeof mainNavLinks)[number]) => {
-    if (link.label === "Home" && appMode) return "/home";
+    if (link.label === "Home" && homeDashboardEnabled) return "/home";
     if (isMobile && link.mobileHref) return link.mobileHref;
 
     return link.href;
   };
   const getIsActive = (href: string, fallbackHref: string) => {
     if (pathname === href) return true;
-    return appMode && fallbackHref === "/" && pathname === "/home";
+    return homeDashboardEnabled && fallbackHref === "/" && pathname === "/home";
   };
 
   return (
@@ -103,6 +107,7 @@ export function Sidebar() {
           <Link href={appMode ? "/home" : "/"} className="flex items-center gap-2">
             <div className="flex h-10 w-10 items-center justify-center overflow-hidden">
               {mounted && (
+                // eslint-disable-next-line @next/next/no-img-element
                 <img
                   src={
                     theme === "dark" ||
@@ -233,6 +238,7 @@ export function Sidebar() {
           <Link href={appMode ? "/home" : "/"} className="flex items-center gap-2">
             <div className="flex h-9 w-9 items-center justify-center overflow-hidden">
               {mounted && (
+                // eslint-disable-next-line @next/next/no-img-element
                 <img
                   src={
                     theme === "dark" ||

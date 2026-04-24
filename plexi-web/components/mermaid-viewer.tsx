@@ -53,6 +53,7 @@ export const Mermaid = memo(function Mermaid({ chart }: { chart: string }) {
             setSvg(svg);
             setError("");
           }
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (e: any) {
           if (isMounted) {
             setError(e?.message || "Failed to render Mermaid diagram");

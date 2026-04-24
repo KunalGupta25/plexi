@@ -3,7 +3,10 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useTheme } from "next-themes";
-import { captureAppModeFromSearch } from "@/lib/app-mode";
+import {
+  captureAppModeFromSearch,
+  captureDashboardModeFromSearch,
+} from "@/lib/app-mode";
 
 export default function SplashPage() {
   const router = useRouter();
@@ -13,6 +16,7 @@ export default function SplashPage() {
   useEffect(() => {
     setMounted(true);
     captureAppModeFromSearch(window.location.search);
+    captureDashboardModeFromSearch(window.location.search);
 
     const timer = setTimeout(() => {
       router.push("/home");
@@ -41,6 +45,7 @@ export default function SplashPage() {
           <div className="absolute -inset-8 rounded-[3rem] bg-primary/20 blur-3xl animate-pulse" />
 
           <div className="relative flex h-56 w-56 items-center justify-center overflow-hidden transition-transform duration-500 hover:scale-105">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={isDark ? "/icon-dark.svg" : "/icon-light.svg"}
               alt="Plexi Logo"

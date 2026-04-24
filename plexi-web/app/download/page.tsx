@@ -140,6 +140,7 @@ export default function DownloadPage() {
           </div>
           <div className="grid gap-4 md:grid-cols-2">
             <figure className="overflow-hidden rounded-xl border border-border bg-background">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src="/download/dashbord-light.png"
                 alt="Plexi app screenshot in light mode"
@@ -150,6 +151,7 @@ export default function DownloadPage() {
               </figcaption>
             </figure>
             <figure className="overflow-hidden rounded-xl border border-border bg-background">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src="/download/dashbaord-dark.png"
                 alt="Plexi app screenshot in dark mode"

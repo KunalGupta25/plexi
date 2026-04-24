@@ -18,7 +18,6 @@ import {
   Undo2,
   Redo2,
   Trash2,
-  Palette,
   Rows3,
   FileText,
   Share2,
@@ -75,6 +74,7 @@ const COLORS = [
 
 export function PDFViewer({
   url,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   filename = "Document",
   className,
   isMobile = false,
@@ -88,6 +88,7 @@ export function PDFViewer({
   const annotationCanvasRefs = useRef<Map<number, HTMLCanvasElement>>(
     new Map(),
   );
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const pdfDocRef = useRef<any>(null);
 
   const [numPages, setNumPages] = useState(0);
@@ -100,7 +101,7 @@ export function PDFViewer({
   const [viewMode, setViewMode] = useState<ViewMode>(
     isMobile ? "scroll" : "single",
   );
-  const [renderedPages, setRenderedPages] = useState<Set<number>>(new Set());
+  const [, setRenderedPages] = useState<Set<number>>(new Set());
   const [containerWidth, setContainerWidth] = useState(0);
 
   // Annotation state
@@ -202,6 +203,7 @@ export function PDFViewer({
           pdf = await pdfjsLib
             .getDocument({
               ...baseOptions,
+              // @ts-expect-error disableWorker is a valid option but missing in types
               disableWorker: true,
             })
             .promise;
@@ -210,6 +212,7 @@ export function PDFViewer({
         pdfDocRef.current = pdf;
         setNumPages(pdf.numPages);
         setLoading(false);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } catch (err: any) {
         console.error("Failed to load PDF:", err);
         if (err?.message?.includes("CORS") || err?.message?.includes("fetch")) {
@@ -243,93 +246,6 @@ export function PDFViewer({
       calculateFitScale();
     }
   }, [isMobile, containerWidth, loading, rotation]);
-
-  // Render single page mode
-  const renderPage = useCallback(async () => {
-    if (!pdfDocRef.current || !canvasRef.current) return;
-
-    try {
-      const page = await pdfDocRef.current.getPage(currentPage);
-      const canvas = canvasRef.current;
-      const context = canvas.getContext("2d");
-
-      if (!context) return;
-
-      const viewport = page.getViewport({ scale, rotation });
-
-      canvas.height = viewport.height;
-      canvas.width = viewport.width;
-
-      if (annotationCanvasRef.current) {
-        annotationCanvasRef.current.height = viewport.height;
-        annotationCanvasRef.current.width = viewport.width;
-        redrawAnnotations(currentPage, annotationCanvasRef.current);
-      }
-
-      await page.render({
-        canvasContext: context,
-        viewport: viewport,
-      }).promise;
-    } catch (err) {
-      console.error("Failed to render page:", err);
-    }
-  }, [currentPage, scale, rotation]);
-
-  useEffect(() => {
-    if (!loading && pdfDocRef.current && viewMode === "single") {
-      renderPage();
-    }
-  }, [loading, renderPage, viewMode]);
-
-  // Render page for scroll mode
-  const renderPageToCanvas = useCallback(
-    async (pageNum: number, canvas: HTMLCanvasElement) => {
-      if (!pdfDocRef.current) return;
-
-      try {
-        const page = await pdfDocRef.current.getPage(pageNum);
-        const context = canvas.getContext("2d");
-
-        if (!context) return;
-
-        const viewport = page.getViewport({ scale, rotation });
-
-        canvas.height = viewport.height;
-        canvas.width = viewport.width;
-
-        // Also setup annotation canvas for this page
-        const annotCanvas = annotationCanvasRefs.current.get(pageNum);
-        if (annotCanvas) {
-          annotCanvas.height = viewport.height;
-          annotCanvas.width = viewport.width;
-          redrawAnnotations(pageNum, annotCanvas);
-        }
-
-        await page.render({
-          canvasContext: context,
-          viewport: viewport,
-        }).promise;
-
-        setRenderedPages((prev) => new Set(prev).add(pageNum));
-      } catch (err) {
-        console.error(`Failed to render page ${pageNum}:`, err);
-      }
-    },
-    [scale, rotation],
-  );
-
-  // Render all pages in scroll mode
-  useEffect(() => {
-    if (!loading && pdfDocRef.current && viewMode === "scroll") {
-      setRenderedPages(new Set());
-      for (let i = 1; i <= numPages; i++) {
-        const canvas = pageCanvasRefs.current.get(i);
-        if (canvas) {
-          renderPageToCanvas(i, canvas);
-        }
-      }
-    }
-  }, [loading, viewMode, numPages, scale, rotation, renderPageToCanvas]);
 
   // Redraw annotations on a specific canvas
   const redrawAnnotations = useCallback(
@@ -383,6 +299,94 @@ export function PDFViewer({
     },
     [annotations],
   );
+
+  // Render single page mode
+  const renderPage = useCallback(async () => {
+    if (!pdfDocRef.current || !canvasRef.current) return;
+
+    try {
+      const page = await pdfDocRef.current.getPage(currentPage);
+      const canvas = canvasRef.current;
+      const context = canvas.getContext("2d");
+
+      if (!context) return;
+
+      const viewport = page.getViewport({ scale, rotation });
+
+      canvas.height = viewport.height;
+      canvas.width = viewport.width;
+
+      if (annotationCanvasRef.current) {
+        annotationCanvasRef.current.height = viewport.height;
+        annotationCanvasRef.current.width = viewport.width;
+        redrawAnnotations(currentPage, annotationCanvasRef.current);
+      }
+
+      await page.render({
+        canvasContext: context,
+        viewport: viewport,
+      }).promise;
+    } catch (err) {
+      console.error("Failed to render page:", err);
+    }
+  }, [currentPage, scale, rotation, redrawAnnotations]);
+
+  useEffect(() => {
+    if (!loading && pdfDocRef.current && viewMode === "single") {
+      renderPage();
+    }
+  }, [loading, renderPage, viewMode]);
+
+  // Render page for scroll mode
+  const renderPageToCanvas = useCallback(
+    async (pageNum: number, canvas: HTMLCanvasElement) => {
+      if (!pdfDocRef.current) return;
+
+      try {
+        const page = await pdfDocRef.current.getPage(pageNum);
+        const context = canvas.getContext("2d");
+
+        if (!context) return;
+
+        const viewport = page.getViewport({ scale, rotation });
+
+        canvas.height = viewport.height;
+        canvas.width = viewport.width;
+
+        // Also setup annotation canvas for this page
+        const annotCanvas = annotationCanvasRefs.current.get(pageNum);
+        if (annotCanvas) {
+          annotCanvas.height = viewport.height;
+          annotCanvas.width = viewport.width;
+          redrawAnnotations(pageNum, annotCanvas);
+        }
+
+        await page.render({
+          canvasContext: context,
+          viewport: viewport,
+        }).promise;
+
+        setRenderedPages((prev) => new Set(prev).add(pageNum));
+      } catch (err) {
+        console.error(`Failed to render page ${pageNum}:`, err);
+      }
+    },
+    [scale, rotation, redrawAnnotations],
+  );
+
+  // Render all pages in scroll mode
+  useEffect(() => {
+    if (!loading && pdfDocRef.current && viewMode === "scroll") {
+      setRenderedPages(new Set());
+      for (let i = 1; i <= numPages; i++) {
+        const canvas = pageCanvasRefs.current.get(i);
+        if (canvas) {
+          renderPageToCanvas(i, canvas);
+        }
+      }
+    }
+  }, [loading, viewMode, numPages, scale, rotation, renderPageToCanvas]);
+
 
   // Redraw annotations when they change
   useEffect(() => {

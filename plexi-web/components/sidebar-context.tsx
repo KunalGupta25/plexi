@@ -12,7 +12,7 @@ const SidebarContext = createContext<SidebarContextType | undefined>(undefined)
 
 export function SidebarProvider({ children }: { children: ReactNode }) {
   const pathname = usePathname()
-  const [collapsed, setCollapsed] = useState(() => pathname === '/')
+  const [collapsed, setCollapsed] = useState(() => pathname === '/' || pathname === '/home')
 
   return (
     <SidebarContext.Provider value={{ collapsed, setCollapsed }}>

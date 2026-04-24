@@ -68,7 +68,7 @@ function MaterialsContent() {
           
           // Find the file
           const fileList = manifest[urlSemester][urlSubject][urlType]
-          const file = fileList.find((f: any) => f.name === urlFile)
+          const file = fileList.find((f: { name: string; download_url: string }) => f.name === urlFile)
           if (file) {
             setSelectedFile({ name: file.name, url: file.download_url })
             // Auto-open viewer on mobile
@@ -76,6 +76,11 @@ function MaterialsContent() {
               setMobileViewerOpen(true)
             }
           }
+        }
+      } else {
+        const storedSemester = localStorage.getItem("plexi-user-semester");
+        if (storedSemester && manifest[storedSemester]) {
+          setSemester(storedSemester);
         }
       }
       setInitialized(true)
