@@ -1,37 +1,14 @@
 "use client";
 
 import React, { memo, useEffect, useMemo, useRef, useState } from "react";
-import mermaid from "mermaid";
 import { Loader2 } from "lucide-react";
-
-mermaid.initialize({
-  startOnLoad: false,
-  theme: "base",
-  securityLevel: "loose",
-  flowchart: {
-    htmlLabels: true,
-    useMaxWidth: true,
-    curve: "basis",
-    padding: 20,
-  },
-  themeVariables: {
-    fontFamily: "Geist, sans-serif",
-    fontSize: "14px",
-    primaryColor: "#fff4dd",
-    primaryTextColor: "#1a1a1a",
-    primaryBorderColor: "#d4a017",
-    lineColor: "#64748b",
-    secondaryColor: "#f1f5f9",
-    tertiaryColor: "#f8fafc",
-    noteBkgColor: "#fff9c4",
-    noteTextColor: "#333",
-  },
-});
 
 export const Mermaid = memo(function Mermaid({ chart }: { chart: string }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [svg, setSvg] = useState<string>("");
   const [error, setError] = useState<string>("");
+  const [mermaidInstance, setMermaidInstance] = useState<any>(null);
+
   const sanitizedChart = useMemo(
     () =>
       chart
@@ -40,7 +17,40 @@ export const Mermaid = memo(function Mermaid({ chart }: { chart: string }) {
     [chart],
   );
 
+  // Lazy load mermaid
   useEffect(() => {
+    import("mermaid").then((m) => {
+      const mermaid = m.default;
+      mermaid.initialize({
+        startOnLoad: false,
+        theme: "base",
+        securityLevel: "loose",
+        flowchart: {
+          htmlLabels: true,
+          useMaxWidth: true,
+          curve: "basis",
+          padding: 20,
+        },
+        themeVariables: {
+          fontFamily: "Geist, sans-serif",
+          fontSize: "14px",
+          primaryColor: "#fff4dd",
+          primaryTextColor: "#1a1a1a",
+          primaryBorderColor: "#d4a017",
+          lineColor: "#64748b",
+          secondaryColor: "#f1f5f9",
+          tertiaryColor: "#f8fafc",
+          noteBkgColor: "#fff9c4",
+          noteTextColor: "#333",
+        },
+      });
+      setMermaidInstance(mermaid);
+    });
+  }, []);
+
+  useEffect(() => {
+    if (!mermaidInstance) return;
+    
     let isMounted = true;
 
     // Force a small delay to ensure fonts are loaded
@@ -48,7 +58,7 @@ export const Mermaid = memo(function Mermaid({ chart }: { chart: string }) {
       const renderChart = async () => {
         try {
           const id = `mermaid-${Math.random().toString(36).slice(2, 9)}`;
-          const { svg } = await mermaid.render(id, sanitizedChart);
+          const { svg } = await mermaidInstance.render(id, sanitizedChart);
           if (isMounted) {
             setSvg(svg);
             setError("");
@@ -68,7 +78,7 @@ export const Mermaid = memo(function Mermaid({ chart }: { chart: string }) {
       isMounted = false;
       clearTimeout(timer);
     };
-  }, [sanitizedChart]);
+  }, [sanitizedChart, mermaidInstance]);
 
   if (error) {
     return (

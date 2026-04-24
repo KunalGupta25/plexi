@@ -57,7 +57,8 @@ import {
   type AIConfig,
   type Scope,
 } from "@/lib/api";
-import { Mermaid } from "@/components/mermaid-viewer";
+import dynamic from "next/dynamic";
+const Mermaid = dynamic(() => import("@/components/mermaid-viewer").then(mod => mod.Mermaid), { ssr: false });
 
 // Types
 interface ChatMessage {
