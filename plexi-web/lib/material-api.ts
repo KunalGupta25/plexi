@@ -2,7 +2,7 @@
 
 // ── Config ─────────────────────────────────────────────────────────────────────
 export const MATERIAL_API =
-  process.env.NEXT_PUBLIC_MATERIAL_API_URL || "https://material.mexus.tech";
+  process.env.NEXT_PUBLIC_MATERIAL_API_URL || "https://plexi-material.mexus.tech";
 
 export const OWNER_LOGIN = "KunalGupta25";
 
