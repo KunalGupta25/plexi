@@ -14,7 +14,10 @@ import {
   Menu,
   ChevronLeft,
   ChevronRight,
+  Upload,
+  Settings2,
 } from "lucide-react";
+import { useAuth } from "@/hooks/use-auth";
 import { useTheme } from "next-themes";
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
@@ -45,6 +48,11 @@ const secondaryNavLinks = [
   { href: "/blogs", label: "Blog & Guides", icon: NotebookPen },
 ];
 
+const contributionNavLinks = [
+  { href: "/contribute", label: "Contribute", icon: Upload },
+  { href: "/manage", label: "Manage Materials", icon: Settings2, ownerOnly: true },
+];
+
 export function Sidebar() {
   const pathname = usePathname();
   const { theme, setTheme } = useTheme();
@@ -54,6 +62,7 @@ export function Sidebar() {
   const [appMode, setAppModeState] = useState(false);
   const [dashboardMode, setDashboardModeState] = useState(false);
   const isMobile = useIsMobile();
+  const { isOwner } = useAuth();
 
   useEffect(() => {
     setMounted(true);
@@ -153,6 +162,37 @@ export function Sidebar() {
                 <Link
                   key={link.href}
                   href={href}
+                  className={cn(
+                    "flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors",
+                    collapsed && "justify-center px-2",
+                    isActive
+                      ? "bg-primary text-primary-foreground"
+                      : "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
+                  )}
+                  title={collapsed ? link.label : undefined}
+                >
+                  <Icon className="h-5 w-5 shrink-0" />
+                  {!collapsed && <span>{link.label}</span>}
+                </Link>
+              );
+            })}
+          </div>
+
+          <div className="mt-6 flex flex-col gap-1">
+            {!collapsed && (
+              <span className="mb-2 px-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                Contribution
+              </span>
+            )}
+            {contributionNavLinks.map((link) => {
+              // Hide "Manage Materials" for non-owners
+              if (link.ownerOnly && !isOwner) return null;
+              const Icon = link.icon;
+              const isActive = pathname === link.href;
+              return (
+                <Link
+                  key={link.href}
+                  href={link.href}
                   className={cn(
                     "flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors",
                     collapsed && "justify-center px-2",
@@ -315,13 +355,12 @@ export function Sidebar() {
             );
           })}
 
-          {/* More Menu (Sheet) */}
           <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
             <SheetTrigger asChild>
               <button
                 className={cn(
                   "flex flex-1 flex-col items-center justify-center gap-1 py-2 transition-colors",
-                  secondaryNavLinks.some((l) => l.href === pathname)
+                  [...secondaryNavLinks, ...contributionNavLinks].some((l) => l.href === pathname)
                     ? "text-primary"
                     : "text-muted-foreground hover:text-foreground",
                 )}
@@ -329,7 +368,7 @@ export function Sidebar() {
                 <div
                   className={cn(
                     "flex h-8 w-12 items-center justify-center rounded-full transition-colors",
-                    secondaryNavLinks.some((l) => l.href === pathname) &&
+                    [...secondaryNavLinks, ...contributionNavLinks].some((l) => l.href === pathname) &&
                       "bg-primary/10",
                   )}
                 >
@@ -343,6 +382,36 @@ export function Sidebar() {
                 <SheetTitle>More Options</SheetTitle>
               </SheetHeader>
               <div className="flex flex-col gap-2 pb-8">
+                {/* Contribution section */}
+                <p className="px-4 pt-1 pb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                  Contribution
+                </p>
+                {contributionNavLinks.map((link) => {
+                  if (link.ownerOnly && !isOwner) return null;
+                  const Icon = link.icon;
+                  const isActive = pathname === link.href;
+                  return (
+                    <Link
+                      key={link.href}
+                      href={link.href}
+                      onClick={() => setMobileMenuOpen(false)}
+                      className={cn(
+                        "flex items-center gap-4 rounded-xl px-4 py-3 text-base font-medium transition-colors",
+                        isActive
+                          ? "bg-primary text-primary-foreground"
+                          : "text-foreground hover:bg-accent",
+                      )}
+                    >
+                      <Icon className="h-5 w-5" />
+                      <span>{link.label}</span>
+                    </Link>
+                  );
+                })}
+
+                {/* More section */}
+                <p className="px-4 pt-3 pb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                  More
+                </p>
                 {secondaryNavLinks.map((link) => {
                   const Icon = link.icon;
                   const isActive = pathname === link.href;
