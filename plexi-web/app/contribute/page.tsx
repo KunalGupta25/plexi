@@ -29,9 +29,9 @@ import { uploadFile, submitMaterial } from "@/lib/material-api";
 import { useManifest, useSemesters, useSubjects } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
-const FILE_TYPES = ["Notes", "Previous Year Papers", "Assignments", "Presentations", "Lab Manual", "Other"];
+const FILE_TYPES = ["Notes", "Previous Year Papers", "Assignments", "Presentations", "Lab Manual", "Syllabus", "Other"];
 const MAX_FILE_SIZE_MB = 25;
-const ALLOWED_EXTENSIONS = [".pdf", ".pptx", ".ppt", ".docx", ".doc", ".xlsx", ".xls", ".txt", ".zip"];
+const ALLOWED_EXTENSIONS = [".pdf"];
 
 interface SelectedFile {
   file: File;
