@@ -46,7 +46,9 @@ function ContributeContent() {
   const { data: manifest } = useManifest();
 
   const [semester, setSemester] = useState("");
+  const [customSemester, setCustomSemester] = useState("");
   const [subject, setSubject] = useState("");
+  const [customSubject, setCustomSubject] = useState("");
   const [fileType, setFileType] = useState(FILE_TYPES[0]);
   const [notes, setNotes] = useState("");
   const [selectedFiles, setSelectedFiles] = useState<SelectedFile[]>([]);
@@ -56,8 +58,24 @@ function ContributeContent() {
   const [dragOver, setDragOver] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const semesters = useSemesters(manifest);
-  const subjects = useSubjects(manifest, semester);
+  const existingSemesters = useSemesters(manifest);
+
+  // Build the full semester list: standard semesters 1–8 + any extras from manifest
+  const STANDARD_SEMESTERS = [
+    "Semester 1", "Semester 2", "Semester 3", "Semester 4",
+    "Semester 5", "Semester 6", "Semester 7", "Semester 8",
+  ];
+  const semesters = [
+    ...STANDARD_SEMESTERS,
+    ...existingSemesters.filter((s) => !STANDARD_SEMESTERS.includes(s)),
+    "__other__",
+  ];
+
+  const subjects = useSubjects(manifest, semester === "__other__" ? "" : semester);
+
+  // Resolved values sent to the API
+  const resolvedSemester = semester === "__other__" ? customSemester.trim() : semester;
+  const resolvedSubject = subject === "__other__" ? customSubject.trim() : subject;
 
   // Handle auth callback from GitHub OAuth
   useEffect(() => {
@@ -97,7 +115,7 @@ function ContributeContent() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!user) return;
-    if (!semester || !subject || !fileType) return;
+    if (!resolvedSemester || !resolvedSubject || !fileType) return;
 
     const validFiles = selectedFiles.filter((f) => f.status === "pending" || f.status === "done");
     if (validFiles.length === 0) return;
@@ -138,11 +156,13 @@ function ContributeContent() {
 
     // Step 2: Submit metadata
     try {
-      const result = await submitMaterial({ semester, subject, fileType, notes, uploadedFiles });
+      const result = await submitMaterial({ semester: resolvedSemester, subject: resolvedSubject, fileType, notes, uploadedFiles });
       setSubmitResult(result);
       // Reset form
       setSemester("");
+      setCustomSemester("");
       setSubject("");
+      setCustomSubject("");
       setFileType(FILE_TYPES[0]);
       setNotes("");
       setSelectedFiles([]);
@@ -155,8 +175,8 @@ function ContributeContent() {
 
   const canSubmit =
     !!user &&
-    !!semester &&
-    !!subject &&
+    !!resolvedSemester &&
+    !!resolvedSubject &&
     !!fileType &&
     selectedFiles.some((f) => f.status === "pending" || f.status === "done") &&
     !isSubmitting;
@@ -267,21 +287,30 @@ function ContributeContent() {
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Semester <span className="text-destructive">*</span></label>
-                  <Select value={semester} onValueChange={(v) => { setSemester(v); setSubject(""); }}>
+                  <Select value={semester} onValueChange={(v) => { setSemester(v); setCustomSemester(""); setSubject(""); setCustomSubject(""); }}>
                     <SelectTrigger className="rounded-xl">
                       <SelectValue placeholder="Select semester" />
                     </SelectTrigger>
                     <SelectContent>
-                      {semesters.map((s) => (
+                      {semesters.filter((s) => s !== "__other__").map((s) => (
                         <SelectItem key={s} value={s}>{s}</SelectItem>
                       ))}
+                      <SelectItem value="__other__">Other (type below)</SelectItem>
                     </SelectContent>
                   </Select>
+                  {semester === "__other__" && (
+                    <Input
+                      placeholder="e.g. Semester 9, Foundation Year"
+                      className="rounded-xl mt-2"
+                      value={customSemester}
+                      onChange={(e) => setCustomSemester(e.target.value)}
+                    />
+                  )}
                 </div>
 
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Subject <span className="text-destructive">*</span></label>
-                  <Select value={subject} onValueChange={setSubject} disabled={!semester}>
+                  <Select value={subject} onValueChange={(v) => { setSubject(v); setCustomSubject(""); }} disabled={!semester}>
                     <SelectTrigger className="rounded-xl">
                       <SelectValue placeholder={semester ? "Select subject" : "Select semester first"} />
                     </SelectTrigger>
@@ -293,11 +322,17 @@ function ContributeContent() {
                     </SelectContent>
                   </Select>
                   {subject === "__other__" && (
-                    <Input
-                      placeholder="Enter subject name"
-                      className="rounded-xl mt-2"
-                      onChange={(e) => setSubject(e.target.value || "__other__")}
-                    />
+                    <div className="space-y-1.5 mt-2">
+                      <Input
+                        placeholder="e.g. Machine Learning, Data Structures"
+                        className="rounded-xl"
+                        value={customSubject}
+                        onChange={(e) => setCustomSubject(e.target.value)}
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Use the full subject name, not abbreviations — e.g. <span className="font-medium text-foreground">Machine Learning</span> not <span className="font-medium text-foreground">ML</span>.
+                      </p>
+                    </div>
                   )}
                 </div>
               </div>

@@ -619,7 +619,8 @@ function AIChatContent() {
             </DialogTitle>
             <DialogDescription>
               Configure your AI provider to get started with intelligent study
-              assistance. Your API key is only sent to the provider.{" "}
+              assistance. Your API key is stored only in your browser memory —
+              it never leaves your device or touches any server.{" "}
               <a
                 href="https://www.notion.so/lazyhuman/How-to-use-Plexi-Assistant-339e3502f091806b98e8d850706ebd47"
                 target="_blank"
@@ -754,7 +755,7 @@ function AIChatContent() {
               <p className="text-xs text-muted-foreground">
                 {selectedProviderId === "custom"
                   ? "Optional - leave empty if your local model doesn't require authentication."
-                  : "Your API key is never stored on our servers."}
+                  : "Your key is never sent to Plexi's servers. It stays in your browser memory and goes directly to the provider."}
                 {selectedProvider?.apiKeyUrl && (
                   <>
                     {" "}
