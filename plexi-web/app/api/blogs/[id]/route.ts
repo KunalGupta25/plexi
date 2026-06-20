@@ -2,20 +2,25 @@ import { NextResponse } from "next/server";
 
 export const dynamic = "force-dynamic";
 import clientPromise from "@/lib/mongodb";
-import { ObjectId } from "mongodb";
+import { ObjectId, Filter, Document } from "mongodb";
 import { validateAdminToken } from "@/lib/admin-auth";
 
 type Params = { params: Promise<{ id: string }> };
+
+/** Build a type-safe $or filter that matches by ObjectId OR by string id field. */
+function buildIdFilter(id: string): Filter<Document> {
+  const isValidObjectId = id.length === 24 && /^[a-f\d]{24}$/i.test(id);
+  const clauses: Filter<Document>[] = [{ id }];
+  if (isValidObjectId) clauses.unshift({ _id: new ObjectId(id) });
+  return { $or: clauses };
+}
 
 export async function GET(request: Request, { params }: Params) {
   try {
     const { id } = await params;
     const client = await clientPromise;
     const db = client.db("plexi");
-    const isValidObjectId = id.length === 24 && /^[a-f\d]{24}$/i.test(id);
-    const orClauses: Record<string, unknown>[] = [{ id }];
-    if (isValidObjectId) orClauses.unshift({ _id: new ObjectId(id) });
-    const blog = await db.collection("blogs").findOne({ $or: orClauses });
+    const blog = await db.collection("blogs").findOne(buildIdFilter(id));
 
     if (!blog) return NextResponse.json({ error: "Blog not found" }, { status: 404 });
     return NextResponse.json(blog);
@@ -40,12 +45,7 @@ export async function PATCH(request: Request, { params }: Params) {
     const db = client.db("plexi");
 
     const result = await db.collection("blogs").updateOne(
-      {
-        $or: [
-          { _id: id.length === 24 ? new ObjectId(id) : null },
-          { id },
-        ].filter(Boolean) as Parameters<typeof db.collection>[0][],
-      },
+      buildIdFilter(id),
       { $set: updateData }
     );
 
@@ -67,12 +67,7 @@ export async function DELETE(request: Request, { params }: Params) {
     const client = await clientPromise;
     const db = client.db("plexi");
 
-    await db.collection("blogs").deleteOne({
-      $or: [
-        { _id: id.length === 24 ? new ObjectId(id) : null },
-        { id },
-      ].filter(Boolean) as Parameters<typeof db.collection>[0][],
-    });
+    await db.collection("blogs").deleteOne(buildIdFilter(id));
 
     return NextResponse.json({ success: true });
   } catch (e) {
