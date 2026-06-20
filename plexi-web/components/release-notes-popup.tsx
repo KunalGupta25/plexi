@@ -16,7 +16,6 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import ReactMarkdown from "react-markdown";
-import rehypeRaw from "rehype-raw";
 import { Sparkles, X, ExternalLink } from "lucide-react";
 
 import { usePathname } from "next/navigation";
@@ -85,7 +84,7 @@ export function ReleaseNotesPopup() {
         
         <div className="p-8 max-h-[60vh] overflow-y-auto">
           <div className="prose prose-sm dark:prose-invert max-w-none prose-headings:mb-4 prose-p:leading-relaxed">
-            <ReactMarkdown rehypePlugins={[rehypeRaw]}>{note.content}</ReactMarkdown>
+            <ReactMarkdown>{note.content}</ReactMarkdown>
           </div>
           {note.buttonText && (
             <div className="mt-8 pt-6 border-t border-border">

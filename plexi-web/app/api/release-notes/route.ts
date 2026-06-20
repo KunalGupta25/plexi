@@ -2,32 +2,40 @@ import { NextResponse } from "next/server";
 
 export const dynamic = "force-dynamic";
 import clientPromise from "@/lib/mongodb";
+import { validateAdminToken } from "@/lib/admin-auth";
 
 export async function GET() {
   try {
     const client = await clientPromise;
     const db = client.db("plexi");
-    const notes = await db.collection("release_notes")
+    const notes = await db
+      .collection("release_notes")
       .find({})
       .sort({ publishedAt: -1 })
       .limit(1)
       .toArray();
-      
+
     return NextResponse.json(notes[0] || null);
   } catch (e) {
+    console.error("GET /api/release-notes error:", e);
     return NextResponse.json({ error: "Failed to fetch release notes" }, { status: 500 });
   }
 }
 
 export async function POST(request: Request) {
+  // SEC-1: Require admin token for mutations
+  if (!validateAdminToken(request)) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   try {
     const body = await request.json();
     const client = await clientPromise;
     const db = client.db("plexi");
-    
-    // Overwrite existing: Delete all old notes
+
+    // Overwrite existing: Delete all old notes then insert new one
     await db.collection("release_notes").deleteMany({});
-    
+
     const newNote = {
       content: body.content,
       buttonText: body.buttonText,
@@ -35,10 +43,11 @@ export async function POST(request: Request) {
       publishedAt: Date.now(),
       version: body.version || "1.0.0",
     };
-    
+
     const result = await db.collection("release_notes").insertOne(newNote);
     return NextResponse.json({ ...newNote, _id: result.insertedId });
   } catch (e) {
+    console.error("POST /api/release-notes error:", e);
     return NextResponse.json({ error: "Failed to publish release notes" }, { status: 500 });
   }
 }

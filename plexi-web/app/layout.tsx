@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from 'next'
-import { Analytics } from '@vercel/analytics/next'
+// @vercel/analytics removed — not compatible with Cloudflare Pages (BUG-8).
+// Use Cloudflare Web Analytics via the CF dashboard instead.
 import { ThemeProvider } from '@/components/theme-provider'
 import { SidebarProvider } from '@/components/sidebar-context'
 import { Sidebar } from '@/components/sidebar'
@@ -60,7 +61,6 @@ export default function RootLayout({
             <MainContent>{children}</MainContent>
           </SidebarProvider>
         </ThemeProvider>
-        {process.env.NODE_ENV === 'production' && <Analytics />}
         <PWARegister />
         <ReleaseNotesPopup />
         <Toaster position="top-center" richColors />

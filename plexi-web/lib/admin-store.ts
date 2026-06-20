@@ -23,6 +23,14 @@ export interface ReleaseNote {
 
 const SEEN_RELEASE_NOTE_KEY = "plexi_seen_release_note";
 
+// ── Auth token helpers ─────────────────────────────────────────────────────────
+/** Returns headers including the admin token stored after login. */
+function getAdminHeaders(): HeadersInit {
+  if (typeof window === "undefined") return {};
+  const token = sessionStorage.getItem("plexi_admin_token") ?? "";
+  return { "Content-Type": "application/json", "X-Admin-Token": token };
+}
+
 export async function getAdminBlogs(): Promise<Blog[]> {
   try {
     const res = await fetch("/api/blogs");
@@ -34,13 +42,15 @@ export async function getAdminBlogs(): Promise<Blog[]> {
 }
 
 export async function saveAdminBlog(blog: Blog) {
-  const isUpdate = !!blog._id || !!blog.id;
-  const url = blog._id ? `/api/blogs/${blog._id}` : "/api/blogs";
-  const method = blog._id ? "PATCH" : "POST";
+  // BUG-4 fix: use _id (MongoDB ObjectId) OR id (string) for the URL so
+  // existing blogs that only have `id` are PATCHed, not duplicated via POST.
+  const blogId = blog._id || blog.id;
+  const url = blogId ? `/api/blogs/${blogId}` : "/api/blogs";
+  const method = blogId ? "PATCH" : "POST";
 
   const res = await fetch(url, {
     method,
-    headers: { "Content-Type": "application/json" },
+    headers: getAdminHeaders(),
     body: JSON.stringify(blog),
   });
 
@@ -51,6 +61,7 @@ export async function saveAdminBlog(blog: Blog) {
 export async function deleteAdminBlog(id: string) {
   const res = await fetch(`/api/blogs/${id}`, {
     method: "DELETE",
+    headers: getAdminHeaders(),
   });
   if (!res.ok) throw new Error("Failed to delete blog");
 }
@@ -68,7 +79,7 @@ export async function getLatestReleaseNote(): Promise<ReleaseNote | null> {
 export async function publishReleaseNote(content: string, buttonText?: string, buttonUrl?: string) {
   const res = await fetch("/api/release-notes", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: getAdminHeaders(),
     body: JSON.stringify({ content, buttonText, buttonUrl }),
   });
   if (!res.ok) throw new Error("Failed to publish release note");

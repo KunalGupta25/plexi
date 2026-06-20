@@ -6,14 +6,14 @@
 
 :root {
   /* Clean, modern light theme - White with subtle blue accents */
-  --background: oklch(0.99 0 0);
+  --background: oklch(0.988 0 0); /* #FCFCFC */
   --foreground: oklch(0.13 0.02 260);
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.13 0.02 260);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.13 0.02 260);
   --primary: oklch(0.13 0.02 260);
-  --primary-foreground: oklch(0.99 0 0);
+  --primary-foreground: oklch(0.988 0 0);
   --secondary: oklch(0.96 0.005 260);
   --secondary-foreground: oklch(0.13 0.02 260);
   --muted: oklch(0.96 0.005 260);
@@ -31,7 +31,7 @@
   --chart-4: oklch(0.75 0.15 80);
   --chart-5: oklch(0.7 0.18 60);
   --radius: 0.75rem;
-  --sidebar: oklch(0.98 0 0);
+  --sidebar: oklch(0.988 0 0);
   --sidebar-foreground: oklch(0.13 0.02 260);
   --sidebar-primary: oklch(0.13 0.02 260);
   --sidebar-primary-foreground: oklch(0.99 0 0);

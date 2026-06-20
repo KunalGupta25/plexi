@@ -55,7 +55,7 @@ const contributionNavLinks = [
 
 export function Sidebar() {
   const pathname = usePathname();
-  const { theme, setTheme } = useTheme();
+  const { theme, setTheme, resolvedTheme } = useTheme(); // UI-9: resolvedTheme replaces window.matchMedia
   const [mounted, setMounted] = useState(false);
   const { collapsed, setCollapsed } = useSidebar();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -119,9 +119,7 @@ export function Sidebar() {
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
                   src={
-                    theme === "dark" ||
-                    (theme === "system" &&
-                      window.matchMedia("(prefers-color-scheme: dark)").matches)
+                    resolvedTheme === "dark"
                       ? "/icon-dark.svg"
                       : "/icon-light.svg"
                   }

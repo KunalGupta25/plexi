@@ -392,7 +392,7 @@ function ContributeContent() {
                 <div>
                   <p className="text-sm font-medium">Drop files here or click to browse</p>
                   <p className="text-xs text-muted-foreground mt-1">
-                    PDF, PPTX, DOCX, XLSX, TXT, ZIP · Max {MAX_FILE_SIZE_MB} MB each
+                    PDF only · Max {MAX_FILE_SIZE_MB} MB per file
                   </p>
                 </div>
               </div>

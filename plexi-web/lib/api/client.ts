@@ -1,5 +1,3 @@
-// Plexi Worker API Client
-
 import type { 
   RetrieveRequest, 
   RetrieveResponse, 
@@ -9,6 +7,13 @@ import type {
 } from './types';
 
 const API_BASE = process.env.NEXT_PUBLIC_WORKER_URL || 'https://plexi-worker.mexus.tech';
+
+export interface ChatStreamOptions extends ChatRequest {
+  /** When true, route the request through the Worker proxy instead of calling
+   *  the LLM provider directly. Required for providers that block browser CORS
+   *  (e.g. Anthropic). The Worker's /api/chat/stream endpoint handles SSE. */
+  useWorkerProxy?: boolean;
+}
 
 class PlexiAPIError extends Error {
   constructor(public status: number, message: string) {
@@ -59,8 +64,9 @@ export async function chat(request: ChatRequest): Promise<ChatResponse> {
  * an extra proxy hop. All listed providers (OpenAI, Groq, Gemini, Mistral,
  * OpenRouter) accept CORS requests from the browser with a Bearer token.
  */
-export async function* chatStream(request: ChatRequest): AsyncGenerator<string, void, unknown> {
-  const { endpoint, apiKey, model, messages } = request;
+export async function* chatStream(request: ChatStreamOptions): AsyncGenerator<string, void, unknown> {
+  const { endpoint, apiKey, model, messages, useWorkerProxy } = request;
+
 
   if (!endpoint || !model) {
     throw new PlexiAPIError(400, 'endpoint and model are required for streaming.');
@@ -74,15 +80,20 @@ export async function* chatStream(request: ChatRequest): AsyncGenerator<string, 
     headers['Authorization'] = `Bearer ${apiKey}`;
   }
 
-  const response = await fetch(`${normalizedEndpoint}/chat/completions`, {
+  // Route through the Worker proxy for providers that block browser CORS (e.g. Anthropic).
+  // The Worker's /api/chat/stream accepts the same body and proxies SSE back.
+  const fetchUrl = useWorkerProxy
+    ? `${API_BASE}/api/chat/stream`
+    : `${normalizedEndpoint}/chat/completions`;
+
+  const fetchBody = useWorkerProxy
+    ? JSON.stringify({ endpoint: normalizedEndpoint, apiKey, model, messages, stream: true })
+    : JSON.stringify({ model, messages, temperature: 0.3, stream: true });
+
+  const response = await fetch(fetchUrl, {
     method: 'POST',
     headers,
-    body: JSON.stringify({
-      model,
-      messages,
-      temperature: 0.3,
-      stream: true,
-    }),
+    body: fetchBody,
   });
 
   if (!response.ok) {

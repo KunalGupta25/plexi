@@ -56,6 +56,7 @@ import {
   type Chunk,
   type AIConfig,
   type Scope,
+  type ChatStreamOptions,
 } from "@/lib/api";
 import dynamic from "next/dynamic";
 const Mermaid = dynamic(() => import("@/components/mermaid-viewer").then(mod => mod.Mermaid), { ssr: false });
@@ -112,6 +113,8 @@ const providers = [
       "claude-3-5-haiku-20241022",
     ],
     requiresApiKey: true,
+    // Anthropic blocks browser CORS — requests must be proxied via the Worker
+    requiresProxy: true,
     apiKeyUrl: "https://console.anthropic.com/settings/keys",
   },
   {
@@ -223,14 +226,50 @@ Keep it **scannable** - students are cramming. Skip unnecessary sections. Don't 
 - Logic/sets: \`$P \\land Q \\implies R$\`, \`$S = \\{x | x > 0\\}$\`
 
 **Mermaid for**: Algorithm flowcharts, tree/graph structures, state transitions, class relationships, system architecture
-- Mermaid edge labels must use \`A -->|label| B\` syntax.
-- Never output \`|label|>\` edge syntax.
 
-Example of correct label syntax:
+**Mermaid styling rules — ALWAYS apply these:**
+1. Use \`flowchart TB\` (top-to-bottom) for hierarchies/trees. Use \`LR\` for pipelines/sequences.
+2. **Color nodes by hierarchy level** using \`classDef\` — never output plain unstyled diagrams:
+   - \`classDef root\` → the central/top concept
+   - \`classDef level1\` → direct children
+   - \`classDef level2\` → grandchildren
+   - \`classDef level3\` → leaves / terminal nodes
+3. Assign classes using \`NodeId:::className\` syntax at the bottom of the diagram.
+4. Add a floating title using a text-shape node:  \`n1["\`**Title**\`"]\` then \`n1@{ shape: text}\`
+5. Edge labels: use \`A -->|label| B\` syntax — NEVER \`|label|>\`
+
+**Canonical classDef palette** (use these exact values):
+\`\`\`
+classDef root   stroke:#818cf8,fill:#eef2ff
+classDef level1 stroke:#2dd4bf,fill:#f0fdfa
+classDef level2 stroke:#a78bfa,fill:#f5f3ff
+classDef level3 stroke:#fb923c,fill:#fff7ed
+\`\`\`
+
+**Example of a correct styled flowchart:**
 \`\`\`mermaid
-graph TD
-    A[Client] -->|Request| B[Server]
-    B -->|Response| A
+flowchart TB
+    OS["Operating System"] --> PM["Process Management"] & MM["Memory Management"] & FS["File System"]
+    PM --> Scheduling["CPU Scheduling"] & IPC["IPC"]
+    MM --> Paging["Paging"] & Segmentation["Segmentation"]
+    FS --> FAT["FAT"] & NTFS["NTFS"] & EXT["EXT4"]
+    n1["\`**OS Components**\`"]
+    n1@{ shape: text}
+     OS:::root
+     PM:::level1
+     MM:::level1
+     FS:::level1
+     Scheduling:::level2
+     IPC:::level2
+     Paging:::level2
+     Segmentation:::level2
+     FAT:::level3
+     NTFS:::level3
+     EXT:::level3
+    classDef root   stroke:#818cf8,fill:#eef2ff
+    classDef level1 stroke:#2dd4bf,fill:#f0fdfa
+    classDef level2 stroke:#a78bfa,fill:#f5f3ff
+    classDef level3 stroke:#fb923c,fill:#fff7ed
 \`\`\`
 
 ## Example Response
@@ -303,7 +342,7 @@ function AIChatContent() {
       id: "1",
       role: "assistant",
       content:
-        "Hello! I'm Plexi AI, your study assistant. I have access to your study materials and can help you understand concepts, summarize topics, or answer questions. Configure my settings to get started!",
+        "Hello! I'm Plexi AI, your study assistant. I have access to your study materials and can help you understand concepts, summarize topics, or answer questions. [Configure my settings](#setup) to get started or use [Plexi inside ChatGPT](https://chatgpt.com/g/g-69caa671910481919ce71d19952e34e5-plexi)!",
     },
   ]);
   const [input, setInput] = useState("");
@@ -334,6 +373,33 @@ function AIChatContent() {
   const subjects = useSubjects(manifest, scopeConfig.semester);
   const markdownComponents = useMemo(
     () => ({
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      a({ href, children, ...props }: any) {
+        if (href === "#setup") {
+          return (
+            <button
+              onClick={(e) => {
+                e.preventDefault();
+                setShowSetupModal(true);
+              }}
+              className="text-primary underline underline-offset-4 hover:text-primary/80 transition-colors font-medium"
+            >
+              {children}
+            </button>
+          );
+        }
+        return (
+          <a
+            href={href}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-primary underline underline-offset-4 hover:text-primary/80 transition-colors font-medium"
+            {...props}
+          >
+            {children}
+          </a>
+        );
+      },
       code({
         inline,
         className,
@@ -414,6 +480,44 @@ function AIChatContent() {
       }
     }
   }, [searchParams]);
+
+  // UI-2: Restore chat session from sessionStorage on mount
+  useEffect(() => {
+    try {
+      const savedScope = sessionStorage.getItem("plexi-chat-scope");
+      const savedMessages = sessionStorage.getItem("plexi-chat-messages");
+      if (savedScope) {
+        const scope = JSON.parse(savedScope) as { semester: string; subject: string };
+        if (scope.semester && scope.subject) {
+          setScopeConfig(scope);
+          setIsConfigured(true);
+          setShowSetupModal(false);
+          setShowScopeModal(false);
+        }
+      }
+      if (savedMessages) {
+        const msgs = JSON.parse(savedMessages) as ChatMessage[];
+        if (msgs.length > 0) setMessages(msgs);
+      }
+    } catch { /* ignore parse errors */ }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // UI-2: Persist messages to sessionStorage on every change
+  useEffect(() => {
+    try {
+      sessionStorage.setItem("plexi-chat-messages", JSON.stringify(messages));
+    } catch { /* quota exceeded — ignore */ }
+  }, [messages]);
+
+  // UI-2: Persist scope to sessionStorage when configured
+  useEffect(() => {
+    if (isConfigured && scopeConfig.semester && scopeConfig.subject) {
+      try {
+        sessionStorage.setItem("plexi-chat-scope", JSON.stringify(scopeConfig));
+      } catch { /* ignore */ }
+    }
+  }, [scopeConfig, isConfigured]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -541,14 +645,19 @@ function AIChatContent() {
         content: `${SYSTEM_PROMPT}\n\n---\n\nActive Study Scope:\nSemester: ${scopeConfig.semester}\nSubject: ${scopeConfig.subject}\n\nRelevant Study Material Context:\n${contextText || "No relevant context was retrieved for this question."}`,
       };
 
+      // BUG-10: Truncate history to last 20 messages (10 turns) to avoid
+      // context-window overflow on long chats or small models.
+      const MAX_HISTORY = 20;
+      const trimmedHistory = messages
+        .filter((m) => m.role !== "assistant" || m.id !== "1")
+        .slice(-MAX_HISTORY);
+
       const chatMessages: APIMessage[] = [
         systemMessage,
-        ...messages
-          .filter((m) => m.role !== "assistant" || m.id !== "1")
-          .map((m) => ({
-            role: m.role as "user" | "assistant",
-            content: m.content,
-          })),
+        ...trimmedHistory.map((m) => ({
+          role: m.role as "user" | "assistant",
+          content: m.content,
+        })),
         { role: "user" as const, content: input },
       ];
 
@@ -573,7 +682,8 @@ function AIChatContent() {
         model: aiConfig.model,
         messages: chatMessages,
         cacheKey: `${scopeConfig.semester}:${scopeConfig.subject}`,
-      })) {
+        useWorkerProxy: selectedProvider?.requiresProxy ?? false,
+      } as ChatStreamOptions)) {
         fullContent += token;
         setMessages((prev) =>
           prev.map((m) =>
@@ -617,19 +727,34 @@ function AIChatContent() {
               <Settings className="h-5 w-5" />
               Setup Plexi AI
             </DialogTitle>
-            <DialogDescription>
-              Configure your AI provider to get started with intelligent study
-              assistance. Your API key is stored only in your browser memory —
-              it never leaves your device or touches any server.{" "}
-              <a
-                href="https://www.notion.so/lazyhuman/How-to-use-Plexi-Assistant-339e3502f091806b98e8d850706ebd47"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-0.5 underline underline-offset-2"
-              >
-                Need help? Read the guide
-                <ExternalLink className="h-3 w-3" />
-              </a>
+            <DialogDescription className="space-y-3 pt-2">
+              <p>
+                Configure your AI provider to get started.{" "}
+                <strong>Your API key is securely stored only on your device and never leaves it.</strong>
+              </p>
+              <div className="flex flex-col gap-2">
+                <Button 
+                  variant="outline" 
+                  className="w-full rounded-xl bg-secondary/30"
+                  asChild
+                >
+                  <a href="https://chatgpt.com/g/g-69caa671910481919ce71d19952e34e5-plexi" target="_blank" rel="noopener noreferrer">
+                    No API Key? Use Plexi inside ChatGPT
+                    <ExternalLink className="ml-2 h-4 w-4" />
+                  </a>
+                </Button>
+                <div className="text-center pt-1">
+                  <a
+                    href="https://www.notion.so/lazyhuman/How-to-use-Plexi-Assistant-339e3502f091806b98e8d850706ebd47"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground underline underline-offset-2 transition-colors"
+                  >
+                    Need help? Read the guide
+                    <ExternalLink className="h-3 w-3" />
+                  </a>
+                </div>
+              </div>
             </DialogDescription>
           </DialogHeader>
 
@@ -755,11 +880,13 @@ function AIChatContent() {
               <p className="text-xs text-muted-foreground">
                 {selectedProviderId === "custom"
                   ? "Optional - leave empty if your local model doesn't require authentication."
-                  : "Your key is never sent to Plexi's servers. It stays in your browser memory and goes directly to the provider."}
+                  : aiConfig.rememberDevice
+                  ? "Your key will be saved in your browser's localStorage on this device. Clear site data to remove it."
+                  : "Your key is held in session memory only — it's never sent to Plexi's servers and is cleared when you close this tab."}
                 {selectedProvider?.apiKeyUrl && (
                   <>
                     {" "}
-                    Ãƒâ€šÃ‚Â·{" "}
+                    {" · "}
                     <a
                       href={selectedProvider.apiKeyUrl}
                       target="_blank"
@@ -894,11 +1021,22 @@ function AIChatContent() {
             </div>
             <div>
               <h1 className="font-semibold">Plexi AI</h1>
-              <p className="text-xs text-muted-foreground">
-                {isConfigured
-                  ? `${scopeConfig.semester} • ${scopeConfig.subject}`
-                  : "Not configured"}
-              </p>
+              {isConfigured ? (
+                // UI-3: Scope chip — visible at all times during chat
+                <div className="flex items-center gap-1.5 mt-0.5">
+                  <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-medium text-primary">
+                    📚 {scopeConfig.semester} › {scopeConfig.subject}
+                  </span>
+                  <button
+                    onClick={() => setShowScopeModal(true)}
+                    className="text-[10px] text-muted-foreground hover:text-foreground underline underline-offset-2 transition-colors"
+                  >
+                    Change
+                  </button>
+                </div>
+              ) : (
+                <p className="text-xs text-muted-foreground">Not configured</p>
+              )}
             </div>
           </div>
           <div className="flex items-center gap-2">

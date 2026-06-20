@@ -72,6 +72,30 @@ const COLORS = [
   "#ec4899",
 ];
 
+// Derive a stable localStorage key from the PDF URL
+function getAnnotationStorageKey(url: string): string {
+  // Use the URL itself as key; strip query params to avoid key churn on signed URLs
+  try {
+    const { pathname } = new URL(url);
+    return `plexi_pdf_annotations_${pathname}`;
+  } catch {
+    return `plexi_pdf_annotations_${url}`;
+  }
+}
+
+function serializeAnnotations(map: Map<number, Annotation[]>): string {
+  return JSON.stringify(Array.from(map.entries()));
+}
+
+function deserializeAnnotations(raw: string): Map<number, Annotation[]> {
+  try {
+    const entries = JSON.parse(raw) as [number, Annotation[]][];
+    return new Map(entries);
+  } catch {
+    return new Map();
+  }
+}
+
 export function PDFViewer({
   url,
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -121,6 +145,35 @@ export function PDFViewer({
     new Map(),
   );
   const [showCopied, setShowCopied] = useState(false);
+
+  // Load persisted annotations from localStorage when the URL changes
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const key = getAnnotationStorageKey(url);
+    const saved = window.localStorage.getItem(key);
+    if (saved) {
+      setAnnotations(deserializeAnnotations(saved));
+    } else {
+      setAnnotations(new Map());
+    }
+    // Reset undo/redo stacks for the new document
+    setUndoStack(new Map());
+    setRedoStack(new Map());
+  }, [url]);
+
+  // Persist annotations to localStorage whenever they change (debounced 500 ms)
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const key = getAnnotationStorageKey(url);
+    const timer = setTimeout(() => {
+      if (annotations.size === 0) {
+        window.localStorage.removeItem(key);
+      } else {
+        window.localStorage.setItem(key, serializeAnnotations(annotations));
+      }
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [annotations, url]);
 
   // Handle share button click
   const handleShare = async () => {

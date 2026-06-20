@@ -22,7 +22,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { MarkdownEditor } from "@/components/markdown-editor";
 import ReactMarkdown from "react-markdown";
-import rehypeRaw from "rehype-raw";
+
 import {
   getAdminBlogs,
   saveAdminBlog,
@@ -54,11 +54,19 @@ export default function AdminPage() {
     setLoading(false);
   };
 
+  // SEC-3: verify the stored token server-side on every mount instead of
+  // trusting a plain sessionStorage boolean flag.
   useEffect(() => {
-    const auth = sessionStorage.getItem("plexi_admin_auth");
-    if (auth === "true") {
-      setIsAuthenticated(true);
-    }
+    const token = sessionStorage.getItem("plexi_admin_token");
+    if (!token) return;
+    fetch("/api/admin/auth", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ password: token }),
+    })
+      .then((r) => r.json())
+      .then((data) => { if (data.success) setIsAuthenticated(true); })
+      .catch(() => { /* token invalid or network error — stay on login screen */ });
   }, []);
 
   useEffect(() => {
@@ -86,7 +94,9 @@ export default function AdminPage() {
       
       if (data.success) {
         setIsAuthenticated(true);
-        sessionStorage.setItem("plexi_admin_auth", "true");
+        // Store the token so admin-store.ts can attach it to mutating API calls (SEC-1)
+        // No longer storing a separate auth flag — the token is the source of truth.
+        sessionStorage.setItem("plexi_admin_token", password);
         toast.success("Welcome back, Admin!");
       } else {
         toast.error(data.error || "Incorrect password");
@@ -341,7 +351,7 @@ export default function AdminPage() {
                       </div>
                       {previewMode ? (
                         <div className="prose prose-sm dark:prose-invert h-[400px] overflow-y-auto rounded-xl border border-border bg-muted/30 p-4">
-                          <ReactMarkdown rehypePlugins={[rehypeRaw]}>{editingBlog.content || "_No content yet_"}</ReactMarkdown>
+                          <ReactMarkdown>{editingBlog.content || "_No content yet_"}</ReactMarkdown>
                         </div>
                       ) : (
                         <MarkdownEditor
@@ -416,7 +426,7 @@ export default function AdminPage() {
                         <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-[10px] font-bold text-primary uppercase">
                           Latest Update
                         </div>
-                        <ReactMarkdown rehypePlugins={[rehypeRaw]}>{releaseNote}</ReactMarkdown>
+                        <ReactMarkdown>{releaseNote}</ReactMarkdown>
                         {releaseButtonText && (
                           <div className="mt-8">
                             <Button className="rounded-xl px-8" variant="outline" disabled>
