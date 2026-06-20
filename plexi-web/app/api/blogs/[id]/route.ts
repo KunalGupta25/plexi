@@ -12,12 +12,10 @@ export async function GET(request: Request, { params }: Params) {
     const { id } = await params;
     const client = await clientPromise;
     const db = client.db("plexi");
-    const blog = await db.collection("blogs").findOne({
-      $or: [
-        { _id: id.length === 24 ? new ObjectId(id) : null },
-        { id }, // Fallback for custom string IDs
-      ].filter(Boolean) as Parameters<typeof db.collection>[0][],
-    });
+    const isValidObjectId = id.length === 24 && /^[a-f\d]{24}$/i.test(id);
+    const orClauses: Record<string, unknown>[] = [{ id }];
+    if (isValidObjectId) orClauses.unshift({ _id: new ObjectId(id) });
+    const blog = await db.collection("blogs").findOne({ $or: orClauses });
 
     if (!blog) return NextResponse.json({ error: "Blog not found" }, { status: 404 });
     return NextResponse.json(blog);
