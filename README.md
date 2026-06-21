@@ -1,9 +1,9 @@
 <div align="center">
-  <img src="https://github.com/KunalGupta25/plexi/blob/main/plexi-web/public/logo.png" alt="Plexi Logo" width="200"/>
+  <!-- <img src="https://github.com/KunalGupta25/plexi/blob/main/plexi-web/public/logo.png" alt="Plexi Logo" width="200"/> -->
+  <img width="200" alt="plexi-logo" src="https://github.com/user-attachments/assets/72d32e29-ae13-4611-8612-88ce06502613" />
 
-  # Plexi
 
-  *Your Personal AI Study Assistant*
+  *Your Personal AI Study Hub*
 
   [![GitHub release (latest by date)](https://img.shields.io/github/v/release/KunalGupta25/plexi)](https://github.com/KunalGupta25/plexi/releases/latest)
   [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
