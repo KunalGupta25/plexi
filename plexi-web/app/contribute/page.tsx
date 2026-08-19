@@ -13,6 +13,8 @@ import {
   ExternalLink,
   LogOut,
   Send,
+  Plus,
+  Link as LinkIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -40,6 +42,15 @@ interface SelectedFile {
   error?: string;
 }
 
+interface UrlEntry {
+  id: number;
+  url: string;
+  name: string;
+  status: "idle" | "fetching" | "done" | "error";
+  downloadUrl?: string;
+  error?: string;
+}
+
 function ContributeContent() {
   const searchParams = useSearchParams();
   const { user, isLoading: authLoading, login, logout } = useAuth();
@@ -57,6 +68,12 @@ function ContributeContent() {
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [dragOver, setDragOver] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // URL mode state
+  const [submitMode, setSubmitMode] = useState<"file" | "url">("file");
+  const [urlEntries, setUrlEntries] = useState<UrlEntry[]>([
+    { id: Date.now(), url: "", name: "", status: "idle" },
+  ]);
 
   const existingSemesters = useSemesters(manifest);
 
@@ -88,6 +105,8 @@ function ContributeContent() {
     }
   }, [searchParams]);
 
+  // ── File mode helpers ──────────────────────────────────────────────────────
+
   function validateFile(file: File): string | null {
     if (file.size > MAX_FILE_SIZE_MB * 1024 * 1024) {
       return `File exceeds ${MAX_FILE_SIZE_MB} MB limit`;
@@ -112,64 +131,154 @@ function ContributeContent() {
     setSelectedFiles((prev) => prev.filter((_, i) => i !== index));
   }
 
+  // ── URL mode helpers ───────────────────────────────────────────────────────
+
+  function addUrlEntry() {
+    setUrlEntries((prev) => [
+      ...prev,
+      { id: Date.now(), url: "", name: "", status: "idle" },
+    ]);
+  }
+
+  function removeUrlEntry(id: number) {
+    setUrlEntries((prev) => prev.filter((e) => e.id !== id));
+  }
+
+  function updateUrlEntry(id: number, patch: Partial<UrlEntry>) {
+    setUrlEntries((prev) =>
+      prev.map((e) => (e.id === id ? { ...e, ...patch } : e))
+    );
+  }
+
+  /** Switch between file and URL mode, resetting the other mode's state. */
+  function switchMode(mode: "file" | "url") {
+    setSubmitMode(mode);
+    if (mode === "file") {
+      setUrlEntries([{ id: Date.now(), url: "", name: "", status: "idle" }]);
+    } else {
+      setSelectedFiles([]);
+    }
+  }
+
+  // ── Submit handler ─────────────────────────────────────────────────────────
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!user) return;
     if (!resolvedSemester || !resolvedSubject || !fileType) return;
 
-    const validFiles = selectedFiles.filter((f) => f.status === "pending" || f.status === "done");
-    if (validFiles.length === 0) return;
-
     setIsSubmitting(true);
     setSubmitError(null);
 
-    // Step 1: Upload all pending files
-    const updatedFiles = [...selectedFiles];
-    for (let i = 0; i < updatedFiles.length; i++) {
-      if (updatedFiles[i].status !== "pending") continue;
+    if (submitMode === "file") {
+      // ── File upload path ────────────────────────────────────────────────────
+      const validFiles = selectedFiles.filter((f) => f.status === "pending" || f.status === "done");
+      if (validFiles.length === 0) { setIsSubmitting(false); return; }
 
-      updatedFiles[i] = { ...updatedFiles[i], status: "uploading" };
-      setSelectedFiles([...updatedFiles]);
+      const updatedFiles = [...selectedFiles];
+      for (let i = 0; i < updatedFiles.length; i++) {
+        if (updatedFiles[i].status !== "pending") continue;
+
+        updatedFiles[i] = { ...updatedFiles[i], status: "uploading" };
+        setSelectedFiles([...updatedFiles]);
+
+        try {
+          const result = await uploadFile(updatedFiles[i].file);
+          updatedFiles[i] = { ...updatedFiles[i], status: "done", downloadUrl: result.downloadUrl };
+        } catch (err) {
+          updatedFiles[i] = {
+            ...updatedFiles[i],
+            status: "error",
+            error: err instanceof Error ? err.message : "Upload failed",
+          };
+        }
+        setSelectedFiles([...updatedFiles]);
+      }
+
+      const uploadedFiles = updatedFiles
+        .filter((f) => f.status === "done" && f.downloadUrl)
+        .map((f) => ({ name: f.file.name, downloadUrl: f.downloadUrl! }));
+
+      if (uploadedFiles.length === 0) {
+        setSubmitError("All files failed to upload. Please try again.");
+        setIsSubmitting(false);
+        return;
+      }
 
       try {
-        const result = await uploadFile(updatedFiles[i].file);
-        updatedFiles[i] = { ...updatedFiles[i], status: "done", downloadUrl: result.downloadUrl };
+        const result = await submitMaterial({ semester: resolvedSemester, subject: resolvedSubject, fileType, notes, uploadedFiles });
+        setSubmitResult(result);
+        // Reset form
+        setSemester(""); setCustomSemester(""); setSubject(""); setCustomSubject("");
+        setFileType(FILE_TYPES[0]); setNotes(""); setSelectedFiles([]);
       } catch (err) {
-        updatedFiles[i] = {
-          ...updatedFiles[i],
-          status: "error",
-          error: err instanceof Error ? err.message : "Upload failed",
-        };
+        setSubmitError(err instanceof Error ? err.message : "Submission failed");
+      } finally {
+        setIsSubmitting(false);
       }
-      setSelectedFiles([...updatedFiles]);
-    }
 
-    const uploadedFiles = updatedFiles
-      .filter((f) => f.status === "done" && f.downloadUrl)
-      .map((f) => ({ name: f.file.name, downloadUrl: f.downloadUrl! }));
+    } else {
+      // ── URL fetch path ──────────────────────────────────────────────────────
+      // Browser fetches each PDF directly then reuses the existing uploadFile() path.
+      const activeEntries = urlEntries.filter((e) => e.url.trim() && e.name.trim());
+      if (activeEntries.length === 0) { setIsSubmitting(false); return; }
 
-    if (uploadedFiles.length === 0) {
-      setSubmitError("All files failed to upload. Please try again.");
-      setIsSubmitting(false);
-      return;
-    }
+      const updatedEntries = [...urlEntries];
+      for (let i = 0; i < updatedEntries.length; i++) {
+        const entry = updatedEntries[i];
+        if (!entry.url.trim() || !entry.name.trim()) continue;
 
-    // Step 2: Submit metadata
-    try {
-      const result = await submitMaterial({ semester: resolvedSemester, subject: resolvedSubject, fileType, notes, uploadedFiles });
-      setSubmitResult(result);
-      // Reset form
-      setSemester("");
-      setCustomSemester("");
-      setSubject("");
-      setCustomSubject("");
-      setFileType(FILE_TYPES[0]);
-      setNotes("");
-      setSelectedFiles([]);
-    } catch (err) {
-      setSubmitError(err instanceof Error ? err.message : "Submission failed");
-    } finally {
-      setIsSubmitting(false);
+        updatedEntries[i] = { ...entry, status: "fetching", error: undefined };
+        setUrlEntries([...updatedEntries]);
+
+        try {
+          const res = await fetch(entry.url);
+          if (!res.ok) throw new Error(`HTTP ${res.status} — server rejected the request`);
+
+          const blob = await res.blob();
+          const safeName = entry.name.trim().toLowerCase().endsWith(".pdf")
+            ? entry.name.trim()
+            : entry.name.trim() + ".pdf";
+          const file = new File([blob], safeName, { type: "application/pdf" });
+
+          const result = await uploadFile(file);
+          updatedEntries[i] = { ...updatedEntries[i], status: "done", downloadUrl: result.downloadUrl };
+        } catch (err) {
+          const msg = err instanceof Error ? err.message : "Failed";
+          updatedEntries[i] = {
+            ...updatedEntries[i],
+            status: "error",
+            error:
+              msg.toLowerCase().includes("failed to fetch") || msg.toLowerCase().includes("networkerror")
+                ? "Could not fetch — the URL may not allow cross-origin requests (CORS blocked)"
+                : msg,
+          };
+        }
+        setUrlEntries([...updatedEntries]);
+      }
+
+      const uploadedFiles = updatedEntries
+        .filter((e) => e.status === "done" && e.downloadUrl)
+        .map((e) => ({ name: e.name.trim(), downloadUrl: e.downloadUrl! }));
+
+      if (uploadedFiles.length === 0) {
+        setSubmitError("All URLs failed to fetch. Make sure they are publicly accessible PDF links.");
+        setIsSubmitting(false);
+        return;
+      }
+
+      try {
+        const result = await submitMaterial({ semester: resolvedSemester, subject: resolvedSubject, fileType, notes, uploadedFiles });
+        setSubmitResult(result);
+        // Reset form
+        setSemester(""); setCustomSemester(""); setSubject(""); setCustomSubject("");
+        setFileType(FILE_TYPES[0]); setNotes("");
+        setUrlEntries([{ id: Date.now(), url: "", name: "", status: "idle" }]);
+      } catch (err) {
+        setSubmitError(err instanceof Error ? err.message : "Submission failed");
+      } finally {
+        setIsSubmitting(false);
+      }
     }
   }
 
@@ -178,8 +287,10 @@ function ContributeContent() {
     !!resolvedSemester &&
     !!resolvedSubject &&
     !!fileType &&
-    selectedFiles.some((f) => f.status === "pending" || f.status === "done") &&
-    !isSubmitting;
+    !isSubmitting &&
+    (submitMode === "file"
+      ? selectedFiles.some((f) => f.status === "pending" || f.status === "done")
+      : urlEntries.some((e) => e.url.trim() && e.name.trim()));
 
   // ── Auth loading state ─────────────────────────────────────────────────────
   if (authLoading) {
@@ -362,95 +473,215 @@ function ContributeContent() {
               </div>
             </div>
 
-            {/* File drop zone */}
+            {/* File / URL section */}
             <div className="rounded-2xl border border-border bg-card p-6 shadow-sm space-y-4">
-              <h2 className="font-semibold text-base">Files</h2>
-
-              <div
-                role="button"
-                tabIndex={0}
-                aria-label="Upload files"
-                className={cn(
-                  "flex flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed p-8 text-center transition-colors cursor-pointer select-none",
-                  dragOver
-                    ? "border-primary bg-primary/5"
-                    : "border-border hover:border-primary/50 hover:bg-accent/30"
-                )}
-                onClick={() => fileInputRef.current?.click()}
-                onKeyDown={(e) => e.key === "Enter" && fileInputRef.current?.click()}
-                onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
-                onDragLeave={() => setDragOver(false)}
-                onDrop={(e) => {
-                  e.preventDefault();
-                  setDragOver(false);
-                  if (e.dataTransfer.files.length) addFiles(e.dataTransfer.files);
-                }}
-              >
-                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-secondary">
-                  <Upload className="h-6 w-6 text-muted-foreground" />
-                </div>
-                <div>
-                  <p className="text-sm font-medium">Drop files here or click to browse</p>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    PDF only · Max {MAX_FILE_SIZE_MB} MB per file
-                  </p>
+              {/* Mode toggle header */}
+              <div className="flex items-center justify-between">
+                <h2 className="font-semibold text-base">Files</h2>
+                <div className="flex rounded-lg border border-border bg-secondary/50 p-0.5 text-sm">
+                  <button
+                    type="button"
+                    onClick={() => switchMode("file")}
+                    className={cn(
+                      "flex items-center gap-1.5 rounded-md px-3 py-1.5 font-medium transition-colors",
+                      submitMode === "file"
+                        ? "bg-card text-foreground shadow-sm"
+                        : "text-muted-foreground hover:text-foreground"
+                    )}
+                  >
+                    <Upload className="h-3.5 w-3.5" />
+                    Upload File
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => switchMode("url")}
+                    className={cn(
+                      "flex items-center gap-1.5 rounded-md px-3 py-1.5 font-medium transition-colors",
+                      submitMode === "url"
+                        ? "bg-card text-foreground shadow-sm"
+                        : "text-muted-foreground hover:text-foreground"
+                    )}
+                  >
+                    <LinkIcon className="h-3.5 w-3.5" />
+                    Add via URL
+                  </button>
                 </div>
               </div>
 
-              <input
-                ref={fileInputRef}
-                type="file"
-                multiple
-                className="hidden"
-                accept={ALLOWED_EXTENSIONS.join(",")}
-                onChange={(e) => { if (e.target.files?.length) addFiles(e.target.files); e.target.value = ""; }}
-              />
+              {submitMode === "file" ? (
+                <>
+                  {/* Drag-and-drop zone */}
+                  <div
+                    role="button"
+                    tabIndex={0}
+                    aria-label="Upload files"
+                    className={cn(
+                      "flex flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed p-8 text-center transition-colors cursor-pointer select-none",
+                      dragOver
+                        ? "border-primary bg-primary/5"
+                        : "border-border hover:border-primary/50 hover:bg-accent/30"
+                    )}
+                    onClick={() => fileInputRef.current?.click()}
+                    onKeyDown={(e) => e.key === "Enter" && fileInputRef.current?.click()}
+                    onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+                    onDragLeave={() => setDragOver(false)}
+                    onDrop={(e) => {
+                      e.preventDefault();
+                      setDragOver(false);
+                      if (e.dataTransfer.files.length) addFiles(e.dataTransfer.files);
+                    }}
+                  >
+                    <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-secondary">
+                      <Upload className="h-6 w-6 text-muted-foreground" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium">Drop files here or click to browse</p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        PDF only · Max {MAX_FILE_SIZE_MB} MB per file
+                      </p>
+                    </div>
+                  </div>
 
-              {selectedFiles.length > 0 && (
-                <ul className="space-y-2">
-                  {selectedFiles.map((sf, i) => (
-                    <li
-                      key={i}
-                      className={cn(
-                        "flex items-center gap-3 rounded-xl border px-4 py-3 text-sm",
-                        sf.status === "error"
-                          ? "border-destructive/30 bg-destructive/5"
-                          : sf.status === "done"
-                          ? "border-emerald-500/30 bg-emerald-500/5"
-                          : "border-border bg-secondary/30"
-                      )}
-                    >
-                      <FileText className={cn(
-                        "h-4 w-4 shrink-0",
-                        sf.status === "error" ? "text-destructive" :
-                        sf.status === "done" ? "text-emerald-500" : "text-muted-foreground"
-                      )} />
-                      <span className="flex-1 truncate font-medium">{sf.file.name}</span>
-                      <span className="shrink-0 text-xs text-muted-foreground">
-                        {(sf.file.size / 1024 / 1024).toFixed(1)} MB
-                      </span>
-                      {sf.status === "uploading" && (
-                        <Loader2 className="h-4 w-4 shrink-0 animate-spin text-primary" />
-                      )}
-                      {sf.status === "done" && (
-                        <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-500" />
-                      )}
-                      {sf.status === "error" && (
-                        <span className="shrink-0 text-xs text-destructive">{sf.error}</span>
-                      )}
-                      {sf.status !== "uploading" && (
-                        <button
-                          type="button"
-                          aria-label="Remove file"
-                          onClick={() => removeFile(i)}
-                          className="ml-1 shrink-0 rounded p-0.5 text-muted-foreground hover:text-destructive transition-colors"
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    multiple
+                    className="hidden"
+                    accept={ALLOWED_EXTENSIONS.join(",")}
+                    onChange={(e) => { if (e.target.files?.length) addFiles(e.target.files); e.target.value = ""; }}
+                  />
+
+                  {selectedFiles.length > 0 && (
+                    <ul className="space-y-2">
+                      {selectedFiles.map((sf, i) => (
+                        <li
+                          key={i}
+                          className={cn(
+                            "flex items-center gap-3 rounded-xl border px-4 py-3 text-sm",
+                            sf.status === "error"
+                              ? "border-destructive/30 bg-destructive/5"
+                              : sf.status === "done"
+                              ? "border-emerald-500/30 bg-emerald-500/5"
+                              : "border-border bg-secondary/30"
+                          )}
                         >
-                          <X className="h-4 w-4" />
-                        </button>
-                      )}
-                    </li>
-                  ))}
-                </ul>
+                          <FileText className={cn(
+                            "h-4 w-4 shrink-0",
+                            sf.status === "error" ? "text-destructive" :
+                            sf.status === "done" ? "text-emerald-500" : "text-muted-foreground"
+                          )} />
+                          <span className="flex-1 truncate font-medium">{sf.file.name}</span>
+                          <span className="shrink-0 text-xs text-muted-foreground">
+                            {(sf.file.size / 1024 / 1024).toFixed(1)} MB
+                          </span>
+                          {sf.status === "uploading" && (
+                            <Loader2 className="h-4 w-4 shrink-0 animate-spin text-primary" />
+                          )}
+                          {sf.status === "done" && (
+                            <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-500" />
+                          )}
+                          {sf.status === "error" && (
+                            <span className="shrink-0 text-xs text-destructive">{sf.error}</span>
+                          )}
+                          {sf.status !== "uploading" && (
+                            <button
+                              type="button"
+                              aria-label="Remove file"
+                              onClick={() => removeFile(i)}
+                              className="ml-1 shrink-0 rounded p-0.5 text-muted-foreground hover:text-destructive transition-colors"
+                            >
+                              <X className="h-4 w-4" />
+                            </button>
+                          )}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </>
+              ) : (
+                <>
+                  {/* URL entries */}
+                  <div className="space-y-3">
+                    {urlEntries.map((entry) => (
+                      <div
+                        key={entry.id}
+                        className={cn(
+                          "rounded-xl border p-4 space-y-2.5 transition-colors",
+                          entry.status === "error"
+                            ? "border-destructive/30 bg-destructive/5"
+                            : entry.status === "done"
+                            ? "border-emerald-500/30 bg-emerald-500/5"
+                            : "border-border bg-secondary/30"
+                        )}
+                      >
+                        <div className="flex items-start gap-2">
+                          <div className="flex-1 space-y-2">
+                            <Input
+                              placeholder="https://example.com/notes.pdf"
+                              className="rounded-xl text-sm"
+                              value={entry.url}
+                              disabled={entry.status === "fetching" || entry.status === "done"}
+                              onChange={(e) =>
+                                updateUrlEntry(entry.id, { url: e.target.value, status: "idle", error: undefined })
+                              }
+                            />
+                            <Input
+                              placeholder="Display name (e.g. Unit-1-OSI_Model.pdf)"
+                              className="rounded-xl text-sm"
+                              value={entry.name}
+                              disabled={entry.status === "fetching" || entry.status === "done"}
+                              onChange={(e) => updateUrlEntry(entry.id, { name: e.target.value })}
+                            />
+                          </div>
+                          <div className="flex flex-col items-center gap-1.5 pt-2 shrink-0">
+                            {entry.status === "fetching" && (
+                              <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                            )}
+                            {entry.status === "done" && (
+                              <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+                            )}
+                            {entry.status !== "fetching" && urlEntries.length > 1 && (
+                              <button
+                                type="button"
+                                aria-label="Remove entry"
+                                onClick={() => removeUrlEntry(entry.id)}
+                                className="rounded p-0.5 text-muted-foreground hover:text-destructive transition-colors"
+                              >
+                                <X className="h-4 w-4" />
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                        {entry.status === "error" && (
+                          <p className="flex items-start gap-1.5 text-xs text-destructive">
+                            <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                            {entry.error}
+                          </p>
+                        )}
+                        {entry.status === "done" && (
+                          <p className="flex items-center gap-1.5 text-xs text-emerald-600 dark:text-emerald-400">
+                            <CheckCircle2 className="h-3.5 w-3.5 shrink-0" />
+                            Fetched and uploaded successfully
+                          </p>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Add another link */}
+                  <button
+                    type="button"
+                    onClick={addUrlEntry}
+                    className="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-dashed border-border py-3 text-sm text-muted-foreground hover:border-primary/50 hover:text-foreground transition-colors"
+                  >
+                    <Plus className="h-4 w-4" />
+                    Add another link
+                  </button>
+
+                  <p className="text-xs text-muted-foreground">
+                    The browser fetches each PDF directly — works for publicly accessible URLs. If a URL fails, try downloading and uploading the file manually instead.
+                  </p>
+                </>
               )}
             </div>
 
@@ -472,7 +703,7 @@ function ContributeContent() {
               {isSubmitting ? (
                 <>
                   <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                  Uploading & Submitting…
+                  {submitMode === "url" ? "Fetching & Uploading…" : "Uploading & Submitting…"}
                 </>
               ) : (
                 <>
